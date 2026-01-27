@@ -65,6 +65,14 @@ This file defines the mandatory workflow for AI agents working on the Google Per
 <!-- SECTION: PRINCIPLES -->
 # Definition of Done: Universal Principles
 
+This section is maintained by the Agent Kernel. For the complete, authoritative version, see:
+- [Universal DoD](docs/system-prompts/principles/definition-of-done.md) - Agent Kernel universal requirements
+- [Python DoD](docs/system-prompts/languages/python/definition-of-done.md) - Agent Kernel Python requirements
+
+**Project-specific extensions:** See [docs/definition-of-done.md](docs/definition-of-done.md)
+
+---
+
 **MANDATORY:** No task is considered "Done" until all applicable criteria in this document are met. This document serves as the **State Transition Logic** for the project's development workflow.
 
 ## 1. The "Plan vs. Reality" Protocol
