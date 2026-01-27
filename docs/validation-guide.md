@@ -123,7 +123,7 @@ Once authenticated and validated, your MCP server exposes these tools:
 ### "credentials.json not found"
 - Ensure `credentials.json` is in `~/.config/google-personal-mcp/profiles/default/`
 - Download it from Google Cloud Console > APIs & Services > Credentials > Your OAuth Client ID
-- See [Credential Storage](../README.md#credential-storage-profile-based) for setup instructions
+- See "Credential Storage (Profile-Based)" section in [README.md](../README.md) for setup instructions
 
 ### "token.json is invalid"
 - Delete the invalid token: `rm ~/.config/google-personal-mcp/profiles/default/token.json`
