@@ -39,6 +39,42 @@ def get_drive_service(alias: str) -> Tuple[DriveService, str]:
     allowed_ids = config_manager.get_allowed_folder_ids(resource.profile)
     return DriveService(context, allowed_folder_ids=allowed_ids), resource.id
 
+# --- Configuration Tools ---
+
+@mcp.tool()
+def list_configured_sheets(profile: str = "default") -> dict:
+    """Lists all configured Google Sheets for a profile."""
+    try:
+        sheets = config_manager.list_sheets(profile)
+        result = []
+        for alias, config in sheets.items():
+            result.append({
+                "alias": alias,
+                "spreadsheet_id": config.id,
+                "description": config.description or "",
+                "profile": config.profile
+            })
+        return {"status": "success", "sheets": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@mcp.tool()
+def list_configured_folders(profile: str = "default") -> dict:
+    """Lists all configured Google Drive folders for a profile."""
+    try:
+        folders = config_manager.list_folders(profile)
+        result = []
+        for alias, config in folders.items():
+            result.append({
+                "alias": alias,
+                "folder_id": config.id,
+                "description": config.description or "",
+                "profile": config.profile
+            })
+        return {"status": "success", "folders": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 # --- Sheets Tools ---
 
 @mcp.tool()

@@ -19,7 +19,7 @@ dependencies = [
 
 [project.scripts]
 google-personal-mcp = "google_personal_mcp.server:main"
-google-drive = "google_mcp_core.scripts.drive_tool:app"
+google-personal = "google_mcp_core.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

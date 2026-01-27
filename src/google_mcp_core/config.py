@@ -52,6 +52,18 @@ class ConfigManager:
             return [r.id for r in self.config.drive_folders.values() if r.profile == profile_name]
         return [r.id for r in self.config.drive_folders.values()]
 
+    def list_sheets(self, profile_name: Optional[str] = None) -> Dict[str, ResourceConfig]:
+        """Returns configured sheets, optionally filtered by profile."""
+        if profile_name:
+            return {k: v for k, v in self.config.sheets.items() if v.profile == profile_name}
+        return self.config.sheets
+
+    def list_folders(self, profile_name: Optional[str] = None) -> Dict[str, ResourceConfig]:
+        """Returns configured drive folders, optionally filtered by profile."""
+        if profile_name:
+            return {k: v for k, v in self.config.drive_folders.items() if v.profile == profile_name}
+        return self.config.drive_folders
+
     def save_config(self):
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
         with open(self.config_path, 'w') as f:
