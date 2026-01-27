@@ -91,7 +91,7 @@ async def validate_server():
         print("=" * 60)
         print("\nThe MCP server is working correctly and ready to use.")
         print("\nNext steps:")
-        print("  1. Ensure credentials.json is in the project directory")
+        print("  1. Configure your resources in ~/.config/google-personal-mcp/config.json")
         print("  2. Add the server to your MCP client configuration")
         print("  3. Connect from your MCP-compatible client (e.g., Claude Desktop)")
 

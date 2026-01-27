@@ -19,45 +19,51 @@ class AuthManager:
         os.makedirs(config_dir, exist_ok=True)
         return config_dir
 
-    def find_credentials_file(self, profile: str = "default", filename: str = 'credentials.json') -> str:
-        """Find credentials file by checking multiple locations."""
-        search_paths = [
-            # 1. Explicit profile directory
-            os.path.join(self.get_config_dir(profile), filename),
-            # 2. Environment variable (only for credentials.json)
-            os.getenv('GOOGLE_PERSONAL_CREDENTIALS') if filename == 'credentials.json' else None,
-            # 3. Legacy location (backwards compatibility)
-            os.path.join(os.path.expanduser(f'~/.google-personal-mcp'), filename),
-            # 4. Current working directory
-            os.path.join(os.getcwd(), filename),
-        ]
+    def get_credentials_path(self, profile: str = "default") -> str:
+        """Get the path to credentials.json for a profile."""
+        config_dir = self.get_config_dir(profile)
+        path = os.path.join(config_dir, "credentials.json")
 
-        for path in search_paths:
-            if path and os.path.exists(path):
-                return path
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f"credentials.json not found for profile '{profile}'.\n"
+                f"Expected location: {path}\n"
+                f"Place your OAuth 2.0 credentials file there and try again."
+            )
+        return path
 
-        raise FileNotFoundError(f"{filename} not found for profile '{profile}'.")
+    def get_token_path(self, profile: str = "default") -> str:
+        """Get the path to token.json for a profile."""
+        config_dir = self.get_config_dir(profile)
+        return os.path.join(config_dir, "token.json")
 
     def get_credentials(self, profile: str = "default", scopes: List[str] = None) -> Credentials:
-        """Authenticates and returns credentials for the given profile and scopes."""
+        """Get Google API credentials for the given profile and scopes.
+
+        Args:
+            profile: Profile name (default: "default")
+            scopes: List of OAuth scopes to request
+
+        Returns:
+            google.oauth2.credentials.Credentials object
+
+        Raises:
+            FileNotFoundError: If credentials.json is not found in the profile directory
+        """
         if scopes is None:
-            # Default to a broad scope if none provided, or keep it minimal?
-            # For now, let's assume the user knows what they want.
             scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file"]
 
-        config_dir = self.get_config_dir(profile)
-        token_path = os.path.join(config_dir, "token.json")
-        
+        token_path = self.get_token_path(profile)
+
         creds = None
         if os.path.exists(token_path):
             try:
-                # Load without forcing scopes, so we see what the token actually has
                 creds = Credentials.from_authorized_user_file(token_path)
                 if creds and not creds.has_scopes(scopes):
-                    logger.info(f"Credentials exist but lack requested scopes: {scopes}. Triggering re-auth.")
+                    logger.info(f"Token exists but lacks required scopes. Re-authenticating for profile '{profile}'...")
                     creds = None
             except Exception as e:
-                logger.warning(f"Failed to load or validate credentials from {token_path}: {e}")
+                logger.warning(f"Failed to load token from {token_path}: {e}")
                 creds = None
 
         if not creds or not creds.valid:
@@ -65,14 +71,14 @@ class AuthManager:
                 logger.debug(f"Refreshing token for profile '{profile}'...")
                 creds.refresh(GoogleRequest())
             else:
-                logger.info(f"Starting OAuth2 flow for profile '{profile}'...")
-                credentials_path = self.find_credentials_file(profile, "credentials.json")
+                logger.info(f"Starting OAuth2 authentication for profile '{profile}'...")
+                credentials_path = self.get_credentials_path(profile)
                 flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
                 creds = flow.run_local_server(port=0)
 
-            # Save the credentials
-            with open(token_path, "w") as token:
-                token.write(creds.to_json())
-            logger.info(f"Token saved to: {token_path}")
+            # Save token to profile directory
+            with open(token_path, "w") as f:
+                f.write(creds.to_json())
+            logger.info(f"Authorization token saved to: {token_path}")
 
         return creds

@@ -30,9 +30,13 @@ The server consists of:
 
 ## Usage
 
-1. Set up Google Sheets API credentials (`credentials.json`)
-2. Run the MCP server: `python src/google_personal_mcp/server.py`
-3. Connect MCP-compatible clients to access the provided tools
+1. Download OAuth 2.0 credentials from Google Cloud Console
+2. Place `credentials.json` in `~/.config/google-personal-mcp/profiles/default/`
+3. Configure resource aliases in `~/.config/google-personal-mcp/config.json`
+4. Run the MCP server: `python src/google_personal_mcp/server.py`
+5. Connect MCP-compatible clients to access the provided tools
+
+See the [README](../README.md) for detailed setup instructions.
 
 ## Tools Available
 

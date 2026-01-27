@@ -39,35 +39,62 @@ To allow the MCP server to interact with your Google Sheets, you need to set up 
     *   Give it a name (e.g., "GoogleSheetsMCP").
     *   Click "CREATE".
 
-3.  **Download `credentials.json`:**
+3.  **Download the OAuth 2.0 credentials:**
     *   After creating the client ID, a dialog will appear with your client ID and client secret.
-    *   Click "DOWNLOAD JSON" to save the `credentials.json` file.
-    *   **Rename the downloaded file to `credentials.json`** and place it in one of the supported locations (see below).
+    *   Click "DOWNLOAD JSON" to save the credentials file.
+    *   **Rename the downloaded file to `credentials.json`** and place it in your profile directory (see below).
 
-    **Important:** `credentials.json` and the generated `token.json` (after the first successful authentication) are sensitive files and are already added to `.gitignore` to prevent them from being committed to your version control system.
+## Credential Storage (Profile-Based)
 
-## Credential File Locations
+The server stores OAuth credentials and authorization tokens organized by profile. This allows you to manage multiple Google accounts or authentication scopes.
 
-The server automatically searches for `credentials.json` and `token.json` in multiple locations (in priority order):
+### Directory Structure
 
-1. **Environment variable** (credentials.json only): `$GOOGLE_PERSONAL_CREDENTIALS`
-2. **XDG config directory**: `~/.config/google-personal-mcp/credentials.json`
-3. **Home directory**: `~/.google-personal-mcp/credentials.json`
-4. **Current working directory**: `./credentials.json` (useful for development)
-5. **Script installation directory**: Same directory as the installed script
-
-You can place your `credentials.json` file in any of these locations. The recommended location for normal use is `~/.config/google-personal-mcp/credentials.json`.
-
-**Example setup:**
-```bash
-mkdir -p ~/.config/google-personal-mcp
-mv ~/Downloads/credentials.json ~/.config/google-personal-mcp/
+```
+~/.config/google-personal-mcp/
+├── config.json              # Resource aliases and configuration
+└── profiles/
+    ├── default/
+    │   ├── credentials.json  # OAuth 2.0 client secrets
+    │   └── token.json        # Authorization token (auto-generated)
+    └── work/                 # Alternative profile example
+        ├── credentials.json
+        └── token.json
 ```
 
-**Using environment variable (optional):**
+### Setting Up a Profile
+
+For the default profile:
+
 ```bash
-export GOOGLE_PERSONAL_CREDENTIALS=/path/to/your/credentials.json
+# Create the profile directory
+mkdir -p ~/.config/google-personal-mcp/profiles/default
+
+# Copy your downloaded credentials
+mv ~/Downloads/credentials.json ~/.config/google-personal-mcp/profiles/default/
 ```
+
+For alternative profiles:
+
+```bash
+# Create alternate profile directory
+mkdir -p ~/.config/google-personal-mcp/profiles/work
+
+# Add credentials for that profile
+mv ~/Downloads/work_credentials.json ~/.config/google-personal-mcp/profiles/work/credentials.json
+```
+
+### How It Works
+
+- **credentials.json**: Contains your OAuth 2.0 client ID and secret (downloaded from Google Cloud Console). This is the same file for all uses of that profile.
+- **token.json**: Created automatically after first authentication. Contains your authorization token. Generated separately for each profile and set of scopes.
+
+Both files are required for authentication. When you run the server for the first time with a profile, it will:
+1. Look for `credentials.json` in the profile directory
+2. If `token.json` doesn't exist or is invalid, open your browser for authentication
+3. Save the authorization token to `token.json`
+
+**Security Note:** Both `credentials.json` and `token.json` are sensitive files. They are added to `.gitignore` to prevent accidental commits.
 
 ## Resource Configuration
 

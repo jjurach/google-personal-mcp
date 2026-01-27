@@ -4,9 +4,9 @@ This guide explains how to validate that your MCP server is working correctly.
 
 ## Prerequisites
 
-1. `credentials.json` file in the project directory ✓ (already present)
-2. Virtual environment with dependencies installed ✓ (already set up)
-3. OAuth authentication completed (see below)
+1. OAuth 2.0 credentials from Google Cloud Console (see setup below)
+2. Virtual environment with dependencies installed
+3. Profile directory created in `~/.config/google-personal-mcp/profiles/`
 
 ## Step 1: Authenticate with Google
 
@@ -75,6 +75,20 @@ Three validation/testing files have been created:
 2. **`validate_server.py`** - Standalone validation script that connects as an MCP client
 3. **`tests/test_server_integration.py`** - pytest integration tests
 
+## Setting Up Credentials
+
+Before validation, set up your OAuth credentials:
+
+```bash
+# Create the default profile directory
+mkdir -p ~/.config/google-personal-mcp/profiles/default
+
+# Download your credentials from Google Cloud Console, then:
+mv ~/Downloads/credentials.json ~/.config/google-personal-mcp/profiles/default/
+```
+
+See the [README](../README.md) for complete credential setup instructions.
+
 ## Configuration for MCP Client
 
 Add this to `$HOME/.gemini/settings.json`:
@@ -85,14 +99,13 @@ Add this to `$HOME/.gemini/settings.json`:
     "google-sheets": {
       "command": "/home/myuser/google-personal-mcp/venv/bin/google-personal-mcp",
       "args": [],
-      "cwd": "/home/myuser/google-personal-mcp",
       "env": {}
     }
   }
 }
 ```
 
-**Important**: The `cwd` parameter is required because the server looks for `credentials.json` and `token.json` in its working directory.
+**Note**: The server looks for credentials and configuration in `~/.config/google-personal-mcp/`, so no `cwd` parameter is needed.
 
 ## Available MCP Tools
 
@@ -107,16 +120,22 @@ Once authenticated and validated, your MCP server exposes these tools:
 
 ## Troubleshooting
 
-### "could not locate runnable browser"
-- Use `authenticate_console.py` instead of `authenticate.py`
-- This is expected in headless/SSH environments
-
 ### "credentials.json not found"
-- Ensure `credentials.json` is in `/home/myuser/google-personal-mcp/`
+- Ensure `credentials.json` is in `~/.config/google-personal-mcp/profiles/default/`
+- Download it from Google Cloud Console > APIs & Services > Credentials > Your OAuth Client ID
+- See [Credential Storage](../README.md#credential-storage-profile-based) for setup instructions
 
 ### "token.json is invalid"
-- Delete `token.json` and re-run `authenticate_console.py`
+- Delete the invalid token: `rm ~/.config/google-personal-mcp/profiles/default/token.json`
+- The server will automatically regenerate it on next authentication
+- You'll be prompted to authorize the app in your browser
+
+### "could not locate runnable browser"
+- This is expected in headless/SSH environments
+- The server will provide a URL to visit manually on another device
+- Copy the authorization code and paste it into the terminal
 
 ### Permission errors when accessing spreadsheet
 - Ensure the Google account you authenticated with has access to the spreadsheet
 - Check that the Google Sheets API is enabled in your Google Cloud project
+- Verify the `config.json` has the correct spreadsheet ID for your profile
