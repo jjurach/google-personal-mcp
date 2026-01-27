@@ -18,7 +18,7 @@ logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 logging.basicConfig(level=logging.WARNING, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
-app = App(default_command="help")
+app = App(help_format="markdown")
 config_manager = ConfigManager()
 
 
