@@ -9,7 +9,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 logger = logging.getLogger(__name__)
 
 class AuthManager:
-    def __init__(self, app_name: str = "google-mcp"):
+    def __init__(self, app_name: str = "google-personal-mcp"):
         self.app_name = app_name
 
     def get_config_dir(self, profile: str = "default") -> str:

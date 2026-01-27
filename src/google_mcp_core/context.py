@@ -3,7 +3,7 @@ from googleapiclient.discovery import build
 from .auth import AuthManager
 
 class GoogleContext:
-    def __init__(self, profile: str = "default", scopes: Optional[List[str]] = None, app_name: str = "google-mcp"):
+    def __init__(self, profile: str = "default", scopes: Optional[List[str]] = None, app_name: str = "google-personal-mcp"):
         self.profile = profile
         self.scopes = scopes or [
             "https://www.googleapis.com/auth/spreadsheets",
