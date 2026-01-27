@@ -138,23 +138,23 @@ sheets_app = App()
 
 
 @sheets_app.command
-def list_all_sheets(sheet_alias: str, profile: str = "default"):
-    """List all sheets (tabs) in a configured spreadsheet."""
+def list_tabs(sheet_alias: str, profile: str = "default"):
+    """List all tabs (sheets) within a configured spreadsheet."""
     try:
         sheet_config = config_manager.get_sheet_resource(sheet_alias)
         context = GoogleContext(profile=profile)
         service = SheetsService(context)
 
-        print(f"\n📊 Sheets in '{sheet_alias}' (profile: {profile})")
+        print(f"\n📊 Tabs in '{sheet_alias}' (profile: {profile})")
         print("-" * 50)
-        sheets = service.list_sheet_titles(sheet_config.id)
+        tabs = service.list_sheet_titles(sheet_config.id)
 
-        if not sheets:
-            print("No sheets found.")
+        if not tabs:
+            print("No tabs found.")
             return
 
-        for i, sheet in enumerate(sheets, 1):
-            print(f"{i}. {sheet}")
+        for i, tab in enumerate(tabs, 1):
+            print(f"{i}. {tab}")
 
     except Exception as e:
         print(f"Error: {e}")
