@@ -345,3 +345,26 @@ Please use the Google Sheets MCP tool to retrieve all prompts from the 'Gemini P
 ## Connecting to MCP Clients
 
 This MCP server can be connected to any MCP-compatible client that supports the MCP protocol. The server exposes tools for programmatic Google Sheets access, allowing clients to manage spreadsheet content, store prompts, and retrieve data across multiple sheets.
+
+## Documentation
+
+### For AI Agents
+- **[AGENTS.md](AGENTS.md)** - Mandatory workflow for AI agents working on this project
+- **[Definition of Done](docs/definition-of-done.md)** - Quality standards and checklists
+- **[Workflows](docs/workflows.md)** - Development workflows for MCP tools and Google API integration
+- **[CLAUDE.md](CLAUDE.md)** - Instructions for Claude Code users
+
+### For Developers
+- **[Documentation Index](docs/README.md)** - Complete documentation navigation
+- **[Architecture](docs/architecture.md)** - System architecture and design
+- **[Implementation Reference](docs/implementation-reference.md)** - Code patterns and templates
+- **[Contributing](docs/contributing.md)** - Contribution guidelines
+
+### Examples
+- **[MCP Tool Example](docs/examples/mcp-tool-example.md)** - Complete MCP tool walkthrough
+- **[Google API Integration Example](docs/examples/google-api-integration.md)** - API integration walkthrough
+- **[Claude Code Examples](docs/examples/claude-code-examples.md)** - Project-specific examples
+
+### Guides
+- **[MCP Development Guide](docs/mcp-development-guide.md)** - Development and debugging
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
