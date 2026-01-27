@@ -24,3 +24,6 @@ The **[docs/system-prompts/tools/claude-code.md](docs/system-prompts/tools/claud
 - **Implementation Patterns:** [docs/implementation-reference.md](docs/implementation-reference.md)
 - **Development Workflows:** [docs/workflows.md](docs/workflows.md)
 - **Code Examples:** [docs/examples/](docs/examples/)
+
+---
+Last Updated: 2026-01-27
