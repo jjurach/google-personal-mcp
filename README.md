@@ -69,6 +69,73 @@ mv ~/Downloads/credentials.json ~/.config/google-personal-mcp/
 export GOOGLE_PERSONAL_CREDENTIALS=/path/to/your/credentials.json
 ```
 
+## Resource Configuration
+
+The server uses a `config.json` file to manage aliases for your Google Sheets and Drive folders. This allows you to reference resources by friendly names instead of long IDs.
+
+### Configuration File Location
+
+The server looks for `config.json` at:
+```
+~/.config/google-personal-mcp/config.json
+```
+
+### Configuration File Structure
+
+Create a `config.json` file with aliases for your resources:
+
+```json
+{
+  "sheets": {
+    "prompts": {
+      "id": "YOUR_SPREADSHEET_ID",
+      "profile": "default",
+      "description": "Main prompts storage"
+    }
+  },
+  "drive_folders": {
+    "documents": {
+      "id": "YOUR_FOLDER_ID",
+      "profile": "default",
+      "description": "Personal documents"
+    }
+  }
+}
+```
+
+### Field Reference
+
+- **sheets**: Dictionary of spreadsheet aliases
+- **drive_folders**: Dictionary of Drive folder aliases
+- **id**: The Google resource ID (spreadsheet ID or folder ID)
+- **profile**: Authentication profile to use (default: `"default"`)
+- **description**: Optional human-readable description
+
+### Finding Your Resource IDs
+
+**Spreadsheet ID:**
+- Open your spreadsheet in Google Sheets
+- Look at the URL: `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit`
+- Copy the ID between `/d/` and `/edit`
+
+**Folder ID:**
+- Open your folder in Google Drive
+- Look at the URL: `https://drive.google.com/drive/folders/FOLDER_ID`
+- Copy the ID after `/folders/`
+
+### Example Setup
+
+```bash
+# Create the config directory
+mkdir -p ~/.config/google-personal-mcp
+
+# Copy the example file
+cp config.json.example ~/.config/google-personal-mcp/config.json
+
+# Edit with your spreadsheet and folder IDs
+nano ~/.config/google-personal-mcp/config.json
+```
+
 ## Verbose Logging
 
 Enable verbose logging to see detailed information about credential file search, authentication, and API operations:
