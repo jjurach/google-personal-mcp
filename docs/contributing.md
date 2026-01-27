@@ -39,10 +39,30 @@ Thank you for your interest in contributing to google-personal-mcp! We welcome c
 
 ### Code Style
 
+We use automated tools to maintain code quality:
+
+- **ruff** for linting and quick fixes
+- **black** for consistent code formatting
+- **mypy** for type checking
+- **pylint** for additional code quality checks
+
+Run code quality checks before committing:
+```bash
+# Check code
+ruff check src/
+black --check src/
+mypy src/
+
+# Auto-fix issues
+ruff check --fix src/
+black src/
+```
+
+Guidelines:
 - Follow [PEP 8](https://pep8.org/) conventions
-- Use type hints where practical
-- Write descriptive commit messages
-- Keep lines under 100 characters when reasonable
+- Use type hints for function parameters and returns
+- Keep lines under 100 characters
+- Pre-commit hooks will run automatically on commit
 
 ### Commit Messages
 

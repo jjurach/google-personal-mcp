@@ -2,12 +2,18 @@ from typing import List, Optional
 from googleapiclient.discovery import build
 from .auth import AuthManager
 
+
 class GoogleContext:
-    def __init__(self, profile: str = "default", scopes: Optional[List[str]] = None, app_name: str = "google-personal-mcp"):
+    def __init__(
+        self,
+        profile: str = "default",
+        scopes: Optional[List[str]] = None,
+        app_name: str = "google-personal-mcp",
+    ):
         self.profile = profile
         self.scopes = scopes or [
             "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
+            "https://www.googleapis.com/auth/drive",
         ]
         self.auth_manager = AuthManager(app_name=app_name)
         self._creds = None

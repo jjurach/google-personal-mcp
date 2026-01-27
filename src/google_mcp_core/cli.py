@@ -4,7 +4,6 @@ Provides tools for managing Google Drive, Sheets, and authentication profiles.
 """
 
 import logging
-from typing import Optional
 from cyclopts import App
 from datetime import datetime
 
@@ -14,8 +13,8 @@ from google_mcp_core.drive import DriveService
 from google_mcp_core.config import ConfigManager
 
 # Suppress noisy google discovery logs
-logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
-logging.basicConfig(level=logging.WARNING, format='[%(levelname)s] %(message)s')
+logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
+logging.basicConfig(level=logging.WARNING, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 app = App(help_format="markdown")
@@ -80,7 +79,7 @@ def list_all_files(profile: str = "default"):
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive.file",
-            "https://www.googleapis.com/auth/drive.readonly"
+            "https://www.googleapis.com/auth/drive.readonly",
         ]
         context = GoogleContext(profile=profile, scopes=scopes)
         service = DriveService(context)
@@ -96,8 +95,8 @@ def list_all_files(profile: str = "default"):
         print(f"{'ID':<35} {'Type':<40} {'Name'}")
         print("-" * 100)
         for f in files:
-            mtype = f.get('mimeType', 'unknown')
-            mtype = mtype.replace('application/vnd.google-apps.', 'g:')
+            mtype = f.get("mimeType", "unknown")
+            mtype = mtype.replace("application/vnd.google-apps.", "g:")
             print(f"{f['id']:<35} {mtype:<40} {f['name']}")
 
     except Exception as e:
@@ -124,8 +123,8 @@ def list_files(folder_alias: str, profile: str = "default"):
         print(f"{'ID':<35} {'Type':<40} {'Name'}")
         print("-" * 100)
         for f in files:
-            mtype = f.get('mimeType', 'unknown')
-            mtype = mtype.replace('application/vnd.google-apps.', 'g:')
+            mtype = f.get("mimeType", "unknown")
+            mtype = mtype.replace("application/vnd.google-apps.", "g:")
             print(f"{f['id']:<35} {mtype:<40} {f['name']}")
 
     except Exception as e:
@@ -201,7 +200,14 @@ def get_prompts(sheet_alias: str, sheet_tab_name: str, profile: str = "default")
             print("No prompts found.")
             return
 
-        headers = ["Name", "Content", "Created By", "Created At", "Last Modified By", "Last Modified At"]
+        headers = [
+            "Name",
+            "Content",
+            "Created By",
+            "Created At",
+            "Last Modified By",
+            "Last Modified At",
+        ]
 
         # Print header
         print(f"{'Name':<25} {'Content':<50} {'Created By':<15}")
