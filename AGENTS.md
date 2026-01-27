@@ -9,6 +9,28 @@ This file defines the mandatory workflow for AI agents working on the Google Per
 - [Workflows](docs/workflows.md) - Development process
 - [Templates](docs/templates.md) - Planning documents
 
+---
+
+## Available System-Prompts Workflows and Processes
+
+**CRITICAL:** The Agent Kernel provides specialized workflows and processes that are **informational resources only**.
+
+**YOU MUST NOT execute any system-prompts process or switch workflows unless:**
+1. **Explicitly requested by the user** (e.g., "Follow the bootstrap-project process")
+2. **Explicitly instructed in this file (AGENTS.md)** or tool-specific entry files (CLAUDE.md, etc.)
+
+**Available resources** (for reference only):
+- **Workflows:** Core (active), Logs-First (optional), Custom templates
+- **Processes:** Bootstrap Project, Document Integrity Scan, Tool Entry Points
+
+See [docs/system-prompts/README.md - Available Workflows and Processes](docs/system-prompts/README.md#available-workflows-and-processes) for complete documentation.
+
+**When user asks about available processes:**
+- You MAY reference the documentation and explain what processes exist
+- You MAY suggest a relevant process if user describes a problem it solves
+- You MUST NOT execute processes proactively without explicit user request
+
+---
 
 <!-- SECTION: CORE-WORKFLOW -->
 # Agent Kernel: Core Workflow & Unbreakable Rules
