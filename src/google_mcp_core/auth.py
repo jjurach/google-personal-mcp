@@ -51,7 +51,7 @@ class AuthManager:
             FileNotFoundError: If credentials.json is not found in the profile directory
         """
         if scopes is None:
-            scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file"]
+            scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
         token_path = self.get_token_path(profile)
 

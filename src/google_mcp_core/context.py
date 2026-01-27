@@ -7,7 +7,7 @@ class GoogleContext:
         self.profile = profile
         self.scopes = scopes or [
             "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive.file"
+            "https://www.googleapis.com/auth/drive"
         ]
         self.auth_manager = AuthManager(app_name=app_name)
         self._creds = None

@@ -27,3 +27,4 @@ token.json
 session_*.md
 
 tmp/
+*.acc
