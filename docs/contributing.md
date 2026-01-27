@@ -39,30 +39,40 @@ Thank you for your interest in contributing to google-personal-mcp! We welcome c
 
 ### Code Style
 
-We use automated tools to maintain code quality:
+This project follows the **Agent Kernel** code quality standards. See:
 
-- **ruff** for linting and quick fixes
-- **black** for consistent code formatting
-- **mypy** for type checking
-- **pylint** for additional code quality checks
+- **[Python Definition of Done](system-prompts/languages/python/definition-of-done.md)** - Python coding standards
+- **[Definition of Done](definition-of-done.md)** - Project-specific requirements
+
+**Automated Tools:**
+
+- **black** - Code formatting
+- **ruff** - Linting and quick fixes
+- **mypy** - Type checking
 
 Run code quality checks before committing:
+
 ```bash
 # Check code
-ruff check src/
 black --check src/
+ruff check src/
 mypy src/
 
 # Auto-fix issues
-ruff check --fix src/
-black src/
+black src/ tests/
+ruff check --fix src/ tests/
 ```
 
-Guidelines:
-- Follow [PEP 8](https://pep8.org/) conventions
-- Use type hints for function parameters and returns
-- Keep lines under 100 characters
-- Pre-commit hooks will run automatically on commit
+**Project-Specific Patterns:**
+
+When adding MCP tools, follow the standard template (see [Implementation Reference](implementation-reference.md)):
+
+- Use `set_request_id()` at start, `clear_request_id()` in finally block
+- Return structured responses: `{"status": "success|error", "result"/"message": ..., "request_id": ...}`
+- Apply credential masking: `mask_credentials()` for all errors
+- Add audit logging: `audit_logger.log_tool_call()`
+- Use service locators: `get_sheets_service()`, `get_drive_service()`
+- Never raise exceptions to MCP layer (return error responses instead)
 
 ### Commit Messages
 
