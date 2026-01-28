@@ -264,6 +264,131 @@ The following tools are exposed by the `fastmcp` server:
 
 These tools are designed to be invoked programmatically via a `fastmcp` client. For example, using a `fastmcp` client library in Python, you might call `client.tools.list_sheets()`.
 
+## Command-Line Interface
+
+The `google-personal` CLI provides tools for managing Google Drive files, Sheets, and configuration.
+
+### Drive Commands
+
+#### List All Files (Diagnostic)
+
+List all files accessible by the current credentials:
+
+```bash
+google-personal drive list-all-files [--profile <profile>]
+```
+
+**Options:**
+- `--profile`: Authentication profile (default: "default")
+
+#### List Files in Folder
+
+List files in a specific Drive folder:
+
+```bash
+google-personal drive list-files [--folder <folder>] [--profile <profile>]
+```
+
+**Options:**
+- `--folder`: Folder alias (optional if only one folder configured)
+- `--profile`: Authentication profile (default: "default")
+
+**Example:**
+```bash
+google-personal drive list-files --folder documents
+```
+
+#### Download File
+
+Download a file from Drive by name:
+
+```bash
+google-personal drive get-file --remote-file <filename> [--local-file <path>] [--folder <folder>] [--profile <profile>]
+```
+
+**Options:**
+- `--remote-file`: Name of the file in Drive (required)
+- `--local-file`: Local path to save (optional, defaults to basename of remote file)
+- `--folder`: Folder alias (optional if only one folder configured)
+- `--profile`: Authentication profile (default: "default")
+
+**Examples:**
+```bash
+# Download with auto-detected filename
+google-personal drive get-file --remote-file 'Recording 3.acc'
+
+# Download with custom local name
+google-personal drive get-file --remote-file 'Report.pdf' --local-file 'Q4-Report.pdf' --folder documents
+```
+
+**Safety:** Command fails if local file already exists to prevent accidental overwrites.
+
+#### Upload File
+
+Upload a file to Drive:
+
+```bash
+google-personal drive put-file --local-file <path> [--remote-file <filename>] [--folder <folder>] [--profile <profile>]
+```
+
+**Options:**
+- `--local-file`: Local file to upload (required)
+- `--remote-file`: Name for the file in Drive (optional, defaults to basename of local file)
+- `--folder`: Folder alias (optional if only one folder configured)
+- `--profile`: Authentication profile (default: "default")
+
+**Examples:**
+```bash
+# Upload with same name
+google-personal drive put-file --local-file report.pdf
+
+# Upload with custom name
+google-personal drive put-file --local-file ./docs/report.pdf --remote-file 'Q4-Report.pdf' --folder documents
+```
+
+#### Remove File
+
+Remove a file from Drive by name:
+
+```bash
+google-personal drive remove-file --remote-file <filename> [--folder <folder>] [--profile <profile>]
+```
+
+**Options:**
+- `--remote-file`: Name of the file to remove (required)
+- `--folder`: Folder alias (optional if only one folder configured)
+- `--profile`: Authentication profile (default: "default")
+
+**Example:**
+```bash
+google-personal drive remove-file --remote-file 'old-backup.zip' --folder documents
+```
+
+### Configuration Commands
+
+#### List Configured Sheets
+
+```bash
+google-personal config list-sheets [--profile <profile>]
+```
+
+#### List Configured Folders
+
+```bash
+google-personal config list-folders [--profile <profile>]
+```
+
+### Sheets Commands
+
+See the Available Tools section above for MCP tools. The CLI also provides direct access to sheets operations:
+
+```bash
+google-personal sheets list-tabs --sheet-alias <alias> [--profile <profile>]
+google-personal sheets get-status --sheet-alias <alias> [--range-name <range>] [--profile <profile>]
+google-personal sheets get-prompts --sheet-alias <alias> --sheet-tab-name <tab> [--profile <profile>]
+google-personal sheets insert-prompt --sheet-alias <alias> --sheet-tab-name <tab> --prompt-name <name> --content <content> [--author <author>] [--profile <profile>]
+```
+
 ## MCP Server Verification
 
 ### Simple Verification Test

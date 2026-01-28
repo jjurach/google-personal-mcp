@@ -46,12 +46,17 @@ async def validate_server():
 
         # Validate expected tools exist
         expected_tools = {
+            "health_check",
+            "list_configured_sheets",
+            "list_configured_folders",
             "list_sheets",
-            "create_sheet",
             "get_sheet_status",
             "insert_prompt",
             "get_prompts",
-            "initialize_readme_sheet"
+            "list_drive_files",
+            "upload_file",
+            "get_file_content",
+            "delete_file"
         }
 
         actual_tools = {tool.name for tool in tools}

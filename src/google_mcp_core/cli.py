@@ -3,7 +3,9 @@
 Provides tools for managing Google Drive, Sheets, and authentication profiles.
 """
 
+import os
 import logging
+from typing import Optional
 from cyclopts import App
 from datetime import datetime
 
@@ -69,6 +71,38 @@ def list_folders(profile: str = "default"):
 drive_app = App()
 
 
+def _resolve_folder(folder_alias: Optional[str], profile: str) -> tuple[str, str]:
+    """Resolve folder alias to folder ID.
+
+    Args:
+        folder_alias: Optional folder alias (None if only one folder)
+        profile: Profile name
+
+    Returns:
+        Tuple of (folder_alias, folder_id)
+
+    Raises:
+        ValueError: If folder_alias is None but multiple folders exist
+        ValueError: If folder_alias not found
+    """
+    if folder_alias is None:
+        # Auto-detect single folder
+        folders = config_manager.list_folders(profile)
+        if len(folders) == 0:
+            raise ValueError(f"No folders configured for profile '{profile}'")
+        elif len(folders) == 1:
+            alias = list(folders.keys())[0]
+            return alias, folders[alias].id
+        else:
+            raise ValueError(
+                f"Multiple folders configured. Please specify --folder. "
+                f"Available: {', '.join(folders.keys())}"
+            )
+    else:
+        folder_config = config_manager.get_folder_resource(folder_alias)
+        return folder_alias, folder_config.id
+
+
 @drive_app.command
 def list_all_files(profile: str = "default"):
     """List all files in Google Drive for a profile.
@@ -82,7 +116,7 @@ def list_all_files(profile: str = "default"):
             "https://www.googleapis.com/auth/drive.readonly",
         ]
         context = GoogleContext(profile=profile, scopes=scopes)
-        service = DriveService(context)
+        service = DriveService(context, allowed_folder_ids=[])
 
         print(f"\n📂 All Drive Files (profile: {profile})")
         print("-" * 100)
@@ -104,17 +138,23 @@ def list_all_files(profile: str = "default"):
 
 
 @drive_app.command
-def list_files(folder_alias: str, profile: str = "default"):
-    """List files in a configured Google Drive folder."""
+def list_files(folder: Optional[str] = None, profile: str = "default"):
+    """List files in a configured Google Drive folder.
+
+    Args:
+        folder: Folder alias (optional if only one folder configured)
+        profile: Authentication profile
+    """
     try:
-        folder_config = config_manager.get_folder_resource(folder_alias)
+        folder_alias, folder_id = _resolve_folder(folder, profile)
+
         context = GoogleContext(profile=profile)
         allowed_ids = config_manager.get_allowed_folder_ids(profile)
         service = DriveService(context, allowed_folder_ids=allowed_ids)
 
         print(f"\n📁 Files in '{folder_alias}' (profile: {profile})")
         print("-" * 100)
-        files = service.list_files(folder_config.id)
+        files = service.list_files(folder_id)
 
         if not files:
             print("No files found.")
@@ -127,8 +167,120 @@ def list_files(folder_alias: str, profile: str = "default"):
             mtype = mtype.replace("application/vnd.google-apps.", "g:")
             print(f"{f['id']:<35} {mtype:<40} {f['name']}")
 
+    except ValueError as e:
+        print(f"❌ Error: {e}")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"❌ Error: {e}")
+
+
+@drive_app.command
+def get_file(
+    remote_file: str,
+    local_file: Optional[str] = None,
+    folder: Optional[str] = None,
+    profile: str = "default",
+):
+    """Download a file from Google Drive by name.
+
+    Args:
+        remote_file: Name of the file to download
+        local_file: Local path to save (defaults to basename of remote_file)
+        folder: Folder alias (optional if only one folder configured)
+        profile: Authentication profile
+    """
+    try:
+        folder_alias, folder_id = _resolve_folder(folder, profile)
+
+        if local_file is None:
+            local_file = os.path.basename(remote_file)
+
+        context = GoogleContext(profile=profile)
+        allowed_ids = config_manager.get_allowed_folder_ids(profile)
+        service = DriveService(context, allowed_folder_ids=allowed_ids)
+
+        print(f"📥 Downloading '{remote_file}' from '{folder_alias}'...")
+        service.download_file_by_name(folder_id, remote_file, local_file)
+        print(f"✅ Downloaded to: {local_file}")
+
+    except FileExistsError as e:
+        print(f"❌ Error: {e}")
+    except FileNotFoundError as e:
+        print(f"❌ Error: {e}")
+    except ValueError as e:
+        print(f"❌ Error: {e}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+
+@drive_app.command
+def put_file(
+    local_file: str,
+    remote_file: Optional[str] = None,
+    folder: Optional[str] = None,
+    profile: str = "default",
+):
+    """Upload a file to Google Drive.
+
+    Args:
+        local_file: Local file path to upload
+        remote_file: Name for the file in Drive (defaults to basename of local_file)
+        folder: Folder alias (optional if only one folder configured)
+        profile: Authentication profile
+    """
+    try:
+        if not os.path.exists(local_file):
+            print(f"❌ Error: Local file not found: {local_file}")
+            return
+
+        folder_alias, folder_id = _resolve_folder(folder, profile)
+
+        if remote_file is None:
+            remote_file = os.path.basename(local_file)
+
+        context = GoogleContext(profile=profile)
+        allowed_ids = config_manager.get_allowed_folder_ids(profile)
+        service = DriveService(context, allowed_folder_ids=allowed_ids)
+
+        print(f"📤 Uploading '{local_file}' to '{folder_alias}' as '{remote_file}'...")
+        result = service.upload_file(local_file, folder_id, remote_file)
+        print(f"✅ Uploaded successfully (ID: {result['id']})")
+
+    except ValueError as e:
+        print(f"❌ Error: {e}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+
+@drive_app.command
+def remove_file(
+    remote_file: str,
+    folder: Optional[str] = None,
+    profile: str = "default",
+):
+    """Remove a file from Google Drive by name.
+
+    Args:
+        remote_file: Name of the file to remove
+        folder: Folder alias (optional if only one folder configured)
+        profile: Authentication profile
+    """
+    try:
+        folder_alias, folder_id = _resolve_folder(folder, profile)
+
+        context = GoogleContext(profile=profile)
+        allowed_ids = config_manager.get_allowed_folder_ids(profile)
+        service = DriveService(context, allowed_folder_ids=allowed_ids)
+
+        print(f"🗑️  Removing '{remote_file}' from '{folder_alias}'...")
+        service.remove_file_by_name(folder_id, remote_file)
+        print(f"✅ File removed successfully")
+
+    except FileNotFoundError as e:
+        print(f"❌ Error: {e}")
+    except ValueError as e:
+        print(f"❌ Error: {e}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
 
 
 # --- Sheets Commands ---
