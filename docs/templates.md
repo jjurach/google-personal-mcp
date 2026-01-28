@@ -15,12 +15,12 @@ The project follows the Agent Kernel template system. For complete template docu
 Development notes and session transcripts are stored in `dev_notes/` using the format:
 
 ```
-dev_notes/YYYY-MM-DD_HH-MM-SS_description.md
+YYYY-MM-DD_HH-MM-SS_description.md
 ```
 
 Examples:
-- `dev_notes/2026-01-27_14-30-00_oauth-scope-upgrade.md`
-- `dev_notes/2026-01-27_16-45-00_documentation-integration-plan.md`
+- `dev_notes/specs/2026-01-27_14-30-00_oauth-scope-upgrade.md`
+- `dev_notes/project_plans/2026-01-27_16-45-00_documentation-integration-plan.md`
 
 ### Planning Documents
 

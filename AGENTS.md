@@ -391,4 +391,4 @@ pytest tests/
 - [ ] Python version documented and tested
 <!-- END-SECTION -->
 ---
-Last Updated: 2026-01-27
+Last Updated: 2026-01-28

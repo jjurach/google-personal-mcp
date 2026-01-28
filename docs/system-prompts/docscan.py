@@ -516,6 +516,14 @@ class DocumentScanner:
                     if ref in hyperlink_targets or ref in backtick_targets:
                         continue
 
+                    # Skip special root files that are often referenced in plain text
+                    ignored_files = {
+                        "README.md", "AGENTS.md", "CLAUDE.md", "AIDER.md",
+                        "GEMINI.md", "CLINE.md", "TOOL-X.md"
+                    }
+                    if ref in ignored_files or ref.split("/")[-1] in ignored_files:
+                        continue
+
                     # Skip common false positives (file paths in explanations that shouldn't be links)
                     if "filename" in line.lower() or "example" in line.lower():
                         continue

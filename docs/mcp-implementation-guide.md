@@ -7,15 +7,15 @@ This document provides a comprehensive guide to the Google Personal MCP Server i
 ## Table of Contents
 
 1. [Core Architecture](#core-architecture)
-2. [Python Libraries & Dependencies](#python-libraries--dependencies)
+2. [Python Libraries and Dependencies](#python-libraries-and-dependencies)
 3. [Configuration System](#configuration-system)
-4. [Authentication & Security](#authentication--security)
+4. [Authentication and Security](#authentication-and-security)
 5. [Directory Structure](#directory-structure)
 6. [Testing Strategy](#testing-strategy)
 7. [CLI Integration](#cli-integration)
-8. [Tool Design & Agent Effectiveness](#tool-design--agent-effectiveness)
-9. [Logging & Observability](#logging--observability)
-10. [Best Practices & Patterns](#best-practices--patterns)
+8. [Tool Design and Agent Effectiveness](#tool-design-and-agent-effectiveness)
+9. [Logging and Observability](#logging-and-observability)
+10. [Best Practices and Patterns](#best-practices-and-patterns)
 
 ---
 
@@ -54,7 +54,7 @@ The server follows a clean separation of concerns:
 
 ---
 
-## Python Libraries & Dependencies
+## Python Libraries and Dependencies
 
 ### Core Dependencies
 
@@ -234,7 +234,7 @@ class AppConfig(BaseModel):
 
 ---
 
-## Authentication & Security
+## Authentication and Security
 
 ### AuthManager Class
 
@@ -577,7 +577,7 @@ Both CLI and server share:
 
 ---
 
-## Tool Design & Agent Effectiveness
+## Tool Design and Agent Effectiveness
 
 ### Tool Purpose
 
@@ -752,7 +752,7 @@ def _verify_access(self, parent_id: str):
 
 ---
 
-## Logging & Observability
+## Logging and Observability
 
 ### Logging Configuration
 
@@ -836,7 +836,7 @@ google-personal-mcp  # MCP server with detailed logs to stderr
 
 ---
 
-## Best Practices & Patterns
+## Best Practices and Patterns
 
 ### 1. Service Locator Pattern
 
@@ -1007,3 +1007,6 @@ This MCP server demonstrates:
 ✅ **Testing**: Both unit and integration test patterns
 
 The patterns and practices documented here should be applied to other MCP server projects for consistency and best practices across the MCP server ecosystem.
+
+---
+Last Updated: 2026-01-28
