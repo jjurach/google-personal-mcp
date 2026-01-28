@@ -474,6 +474,7 @@ This MCP server can be connected to any MCP-compatible client that supports the 
 ## Documentation
 
 ### For AI Agents
+- **[Mandatory Reading](docs/mandatory.md)** - MUST READ FIRST before every session
 - **[AGENTS.md](AGENTS.md)** - Mandatory workflow for AI agents working on this project
 - **[Definition of Done](docs/definition-of-done.md)** - Quality standards and checklists
 - **[Workflows](docs/workflows.md)** - Development workflows for MCP tools and Google API integration

@@ -5,7 +5,8 @@ Complete documentation for the Google Personal MCP Server project.
 ## Quick Start
 
 **For AI Agents:**
-- Start with **[AGENTS.md](../AGENTS.md)** - Mandatory workflow and unbreakable rules
+- Start with **[Mandatory Reading](mandatory.md)** - MUST READ FIRST before every session
+- Then read **[AGENTS.md](../AGENTS.md)** - Mandatory workflow and unbreakable rules
 - Check **[Definition of Done](definition-of-done.md)** - Quality standards before marking tasks complete
 
 **For Developers:**
