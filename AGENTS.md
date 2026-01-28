@@ -11,6 +11,22 @@ This file defines the mandatory workflow for AI agents working on the Google Per
 
 ---
 
+## Mandatory Reading - Read First Every Session {#mandatory-reading---read-first-every-session}
+
+**CRITICAL:** Before starting ANY task in this project, you MUST read these files in this exact order.
+
+These files define:
+- How to approach all tasks (workflow and steps)
+- Quality standards (definition of done criteria)
+- Project-specific rules and structure
+- What actions are prohibited
+
+**Reading these files is NOT optional. Skip them and you WILL make mistakes.**
+
+**Start here:** [Mandatory Reading Guide](docs/mandatory.md)
+
+---
+
 ## Available System-Prompts Workflows and Processes
 
 **CRITICAL:** The Agent Kernel provides specialized workflows and processes that are **informational resources only**.
