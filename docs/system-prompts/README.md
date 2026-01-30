@@ -51,11 +51,11 @@ docs/system-prompts/
 
 The project uses "anemic" tool entry points in the root directory that redirect to comprehensive guides in `docs/system-prompts/tools/`.
 
-**Entry Point Files (Root):**
-- `AIDER.md` → `docs/system-prompts/tools/aider.md`
-- `CLAUDE.md` → `docs/system-prompts/tools/claude-code.md`
-- `CLINE.md` → `docs/system-prompts/tools/cline.md`
-- `GEMINI.md` → `docs/system-prompts/tools/gemini.md`
+**Entry Point Files:**
+- `.aider.md` → `docs/system-prompts/tools/aider.md`
+- `.claude/CLAUDE.md` → `docs/system-prompts/tools/claude-code.md`
+- `.clinerules` → `docs/system-prompts/tools/cline.md`
+- `.gemini/GEMINI.md` → `docs/system-prompts/tools/gemini.md`
 
 **Management:**
 These files are managed by `bootstrap.py`:
@@ -132,6 +132,39 @@ python3 bootstrap.py --disable-logs-first --commit  # Disable logs-first workflo
    - **Missing sections:** Adds them
 4. **Safe by Default:** Dry-run mode is the default; use `--commit` to write
 
+### Link Transformation
+
+Bootstrap automatically transforms relative markdown links when assembling `AGENTS.md` from component files in `docs/system-prompts/`. This ensures links work correctly in both the source files (where they're edited) and the assembled `AGENTS.md` (where agents read them).
+
+**How it works:**
+- Source files can use relative links that work in their location (e.g., `../definition-of-done.md`)
+- During assembly, links are automatically rewritten to work from `AGENTS.md`'s location at the project root
+
+**Example transformation:**
+```markdown
+# In docs/system-prompts/mandatory-reading.md (source)
+[Definition of Done](../definition-of-done.md)
+
+# After assembly in AGENTS.md (at root)
+[Definition of Done](docs/definition-of-done.md)
+```
+
+**What gets transformed:**
+- Relative paths with `../` or `./` prefixes
+- Anchors are preserved: `../file.md#section` → `docs/file.md#section`
+
+**What stays unchanged:**
+- External URLs: `https://example.com`
+- Absolute paths: `/absolute/path`
+- Self-references: `#anchor-only`
+- Non-relative paths: `file.md` (no prefix)
+
+**Benefits:**
+- Source files remain navigable in IDEs and GitHub
+- Assembled `AGENTS.md` has working links for AI agents
+- Bootstrap process is truly idempotent
+- No manual link maintenance required
+
 ## Testing Agent Kernel Tools
 
 The Agent Kernel includes a comprehensive test suite for `bootstrap.py` and `docscan.py`. Tests are located in `docs/system-prompts/tests/` and use Python's standard library only—no external dependencies required.
@@ -145,8 +178,9 @@ python3 -m unittest discover -s docs/system-prompts/tests -p "test_*.py"
 
 **Run specific test suite:**
 ```bash
-python3 docs/system-prompts/tests/test_docscan.py     # Test document scanner
-python3 docs/system-prompts/tests/test_bootstrap.py   # Test bootstrap tool
+python3 docs/system-prompts/tests/test_docscan.py              # Test document scanner
+python3 docs/system-prompts/tests/test_bootstrap.py            # Test bootstrap tool
+python3 docs/system-prompts/tests/test_link_transformation.py  # Test link transformation
 ```
 
 **Using the test runner script:**
@@ -174,6 +208,15 @@ python3 docs/system-prompts/tests/test_bootstrap.py   # Test bootstrap tool
 - Project root detection
 - MANDATORY-READING section handling
 - Safe update operations with force flag
+
+**Link Transformation Tests:**
+- Parent directory links (`../file.md` → `docs/file.md`)
+- Anchor preservation (`../file.md#section` → `docs/file.md#section`)
+- External URL preservation (`https://example.com` unchanged)
+- Absolute path preservation (`/absolute/path` unchanged)
+- Self-reference preservation (`#anchor` unchanged)
+- Current directory links (`./file.md` transformation)
+- Edge cases (multiple parent traversals, complex anchors)
 
 ### Test Requirements
 
@@ -722,7 +765,7 @@ Processes are specialized, one-time or periodic maintenance operations. Located 
 ### Process Invocation Examples
 
 **Correct invocations (user explicitly requests):**
-- "Follow the bootstrap-project process in docs/system-prompts/processes/bootstrap-project.md"
+- "Follow the bootstrap-project process in `docs/system-prompts/processes/bootstrap-project.md`"
 - "Run the document integrity scan"
 - "Create a Claude Code entry point following the tool-entry-points process"
 - "Switch to logs-first workflow" (requires AGENTS.md modification)
@@ -745,57 +788,49 @@ Processes are specialized, one-time or periodic maintenance operations. Located 
 
 ## Project Integration
 
-This Agent Kernel is integrated into the **Google Personal MCP Server** project with the following extensions:
+This Agent Kernel is integrated into the **Second Voice** project with the following extensions:
 
 ### Entry Points
 
 - **[AGENTS.md](../../AGENTS.md)** - Main agent instructions combining Agent Kernel workflows with project-specific requirements
 - **[docs/definition-of-done.md](../definition-of-done.md)** - Project-specific DoD extending Agent Kernel universal and Python DoD
-- **[CLAUDE.md](../../CLAUDE.md)** - Claude Code specific instructions
 - **[docs/workflows.md](../workflows.md)** - Project-specific development workflows
 
 ### Project-Specific Extensions
 
 The project adds domain-specific requirements for:
 
-**MCP Tool Development:**
-- Standard tool template with request ID tracking
-- Structured error responses with credential masking
-- Audit logging for all tool calls
-- Service locator pattern for resource access
+**Project Type:**
+- CLI Application
+- Audio Processing (AAC, Whisper)
+- Google Gemini Integration
 
-**Google API Integration:**
-- OAuth scope management and re-authentication requirements
-- Service class patterns using GoogleContext
-- API mocking strategies for testing
-- Retry logic and rate limiting patterns
-
-**Security & Configuration:**
-- Credential masking in all errors and logs
-- Profile-based authentication system
-- Resource alias configuration management
-- Access control for Drive operations
+**Technology Stack:**
+- Python 3.12+
+- Pytest
+- SoundDevice
+- Pydub
 
 See [docs/definition-of-done.md](../definition-of-done.md) for complete project-specific requirements.
 
 ### Sync Status
 
-- **Bootstrap sync:** Completed 2026-01-26
-- **Last integration update:** 2026-01-27
-- **Sections synchronized:** CORE-WORKFLOW, PRINCIPLES, PYTHON-CODE-QUALITY, PYTHON-TESTING, PYTHON-DEPENDENCIES
+- **Bootstrap sync:** Completed 2026-01-29
+- **Last integration update:** 2026-01-29
+- **Sections synchronized:** CORE-WORKFLOW, PRINCIPLES, PYTHON-DOD
 
 ### Documentation Structure
 
 ```
 project-root/
 ├── AGENTS.md                           # Combined: Agent Kernel + project extensions
-├── CLAUDE.md                           # Claude Code instructions
+├── [TOOL].md                           # Tool-specific instructions (if exists)
 ├── docs/
 │   ├── definition-of-done.md          # Project DoD (extends Agent Kernel)
 │   ├── architecture.md                # Project architecture
 │   ├── implementation-reference.md    # Implementation patterns
 │   ├── workflows.md                   # Project workflows (extends Agent Kernel)
-│   ├── examples/                      # Project-specific examples
+│   ├── examples/                      # Project-specific examples (if exists)
 │   └── system-prompts/                # Agent Kernel (this directory)
 │       ├── README.md                  # This file
 │       ├── principles/                # Universal principles

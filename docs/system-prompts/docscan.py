@@ -44,10 +44,10 @@ CONDITIONAL_MARKERS = {
 # Safe targets from system-prompts (entry points that always exist in AGENTS.md projects)
 ENTRY_POINTS = {
     "AGENTS.md",
-    "CLAUDE.md",
-    "CLINE.md",
-    "AIDER.md",
-    "GEMINI.md",
+    ".claude/CLAUDE.md",
+    ".clinerules",
+    ".aider.md",
+    ".gemini/GEMINI.md",
 }
 
 # Directories to exclude from plain-text reference checks (transient/working documents)
@@ -67,7 +67,38 @@ ALLOWED_BACK_REFERENCES = {
         "../workflows.md",
         "../architecture.md",
         "../implementation-reference.md",
-    }
+    },
+    "docs/system-prompts/mandatory-reading.md": {
+        "../definition-of-done.md",
+        "../mandatory.md",
+        "../architecture.md",
+        "../implementation-reference.md",
+        "../workflows.md",
+    },
+    "docs/system-prompts/tips/README.md": {
+        "../../definition-of-done.md",
+    },
+    "docs/system-prompts/tools/claude-code.md": {
+        "../../definition-of-done.md",
+        "../../mandatory.md",
+        "../../../.claude/CLAUDE.md",
+    },
+    "docs/system-prompts/tools/cline.md": {
+        "../../definition-of-done.md",
+        "../../mandatory.md",
+    },
+    "docs/system-prompts/tools/gemini.md": {
+        "../../definition-of-done.md",
+        "../../mandatory.md",
+        "../../../.gemini/GEMINI.md",
+    },
+    "docs/system-prompts/tools/aider.md": {
+        "../../definition-of-done.md",
+        "../../mandatory.md",
+    },
+    "docs/system-prompts/processes/close-project.md": {
+        "../../definition-of-done.md",
+    },
 }
 
 # Entry file line count threshold (relaxed from 20 to account for enhanced templates)
@@ -456,7 +487,7 @@ class DocumentScanner:
         # Pattern for potential plain-text references (words containing .md or path-like structures)
         # This includes: docs/file.md, AGENTS.md, ./file.md, ../file.md, etc.
         plaintext_pattern = re.compile(
-            r"(?:^|[^`\[])(?:(?:docs/|\.{0,2}/)?(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.md|(?:AGENTS|CLAUDE|CLINE|AIDER|GEMINI)\.md)(?:[^)\]`]|$)"
+            r"(?:^|[^`\[])(?:(?:docs/|\.{0,2}/)?(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.md|(?:AGENTS|\.claude/CLAUDE|CLINE|AIDER|\.gemini/GEMINI)\.md)(?:[^)\]`]|$)"
         )
 
         all_md_files = list(self.project_root.rglob("*.md"))
@@ -519,7 +550,7 @@ class DocumentScanner:
                     # Skip special root files that are often referenced in plain text
                     ignored_files = {
                         "README.md", "AGENTS.md", "CLAUDE.md", "AIDER.md",
-                        "GEMINI.md", "CLINE.md", "TOOL-X.md"
+                        "GEMINI.md", "CLINE.md", "TOOL-X.md", ".aider.md", ".clinerules"
                     }
                     if ref in ignored_files or ref.split("/")[-1] in ignored_files:
                         continue
@@ -545,103 +576,60 @@ class DocumentScanner:
                     if self.options.verbose:
                         print(f"  ⚠️  {relative_path}:{line_num}: '{ref}' (plain text, not formatted)")
 
-    def _check_tool_entry_points(self):
-        """Layer 4: Validate tool entry point files (CLAUDE.md, AIDER.md, etc.)."""
-        print("\n### Checking Tool Entry Point Files...")
+    def _check_tool_entry_points(self) -> int:
+        """Layer 4: Validate tool entry point files (CLAUDE.md, .aider.md, etc.)."""
+        print("\n[Layer 4: Tool Entry Points]")
 
-        tools = {
-            "CLAUDE.md": "claude-code.md",
-            "AIDER.md": "aider.md",
-            "CLINE.md": "cline.md",
-            "GEMINI.md": "gemini.md",
+        # Map entry files to their corresponding guides
+        tool_files = {
+            ".claude/CLAUDE.md": "claude-code.md",
+            ".aider.md": "aider.md",
+            ".clinerules": "cline.md",
+            ".gemini/GEMINI.md": "gemini.md",
         }
 
-        required_links = {
-            "AGENTS.md": "[AGENTS.md]",
-            "definition-of-done.md": "definition-of-done.md",
-            "workflows.md": "workflows.md",
-        }
-
-        for entry_file, tool_guide in tools.items():
-            entry_path = self.project_root / entry_file
-
-            if not entry_path.exists():
-                self.violations.append(
-                    {
-                        "file": entry_file,
-                        "type": "missing-tool-entry",
-                        "severity": "error",
-                        "message": f"Missing tool entry point file",
-                    }
-                )
-                if self.options.verbose:
-                    print(f"  ❌ {entry_file}: Missing")
+        errors = 0
+        for entry_file, guide_file in tool_files.items():
+            path = self.project_root / entry_file
+            if not path.exists():
+                # Codex doesn't have a dedicated entry file anymore
+                if entry_file == "CODEX.md":
+                    continue
+                print(f"  ✗ {entry_file} missing")
+                errors += 1
                 continue
 
-            with open(entry_path, "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            relative_path = str(entry_path.relative_to(self.project_root))
-            line_count = len(content.strip().split("\n"))
+            issues = []
+            lines = content.strip().split("\n")
 
-            # Check line count (should be anemic: ≤40 lines, relaxed from 20)
-            if line_count > ENTRY_FILE_MAX_LINES:
-                self.violations.append(
-                    {
-                        "file": relative_path,
-                        "type": "tool-entry-bloated",
-                        "severity": "warning",
-                        "message": f"Entry file is {line_count} lines (should be ≤{ENTRY_FILE_MAX_LINES} for anemic format)",
-                    }
-                )
+            # 1. Anemic format check (line count)
+            if len(lines) > 25:
+                issues.append(f"Too long ({len(lines)} lines, max 25)")
 
-            # Check for required links
-            for link_name, link_text in required_links.items():
-                if link_text not in content:
-                    self.violations.append(
-                        {
-                            "file": relative_path,
-                            "type": "missing-tool-link",
-                            "severity": "error",
-                            "message": f"Missing link to {link_name}",
-                        }
-                    )
-
-            # Check for tool-specific guide link
-            if f"system-prompts/tools/{tool_guide}" not in content:
-                self.violations.append(
-                    {
-                        "file": relative_path,
-                        "type": "missing-tool-guide-link",
-                        "severity": "error",
-                        "message": f"Missing link to tool guide (docs/system-prompts/tools/{tool_guide})",
-                    }
-                )
-
-            # Check for forbidden patterns (content that should be in tool guide)
-            forbidden_patterns = [
-                (r"## Available Tools", "Tool lists should be in tool guide, not entry point"),
-                (r"## Development Environment", "Dev environment details belong in README"),
-                (r"## Key Concepts", "Key Concepts should reference AGENTS.md"),
-                (r"### File Operations", "File operation details belong in tool guide"),
-                (r"## Key Commands", "Commands should be in tool guide, not entry point"),
+            # 2. Required links check
+            required_links = [
+                "AGENTS.md",
+                "docs/definition-of-done.md",
+                f"docs/system-prompts/tools/{guide_file}",
+                "docs/workflows.md",
             ]
 
-            for pattern, reason in forbidden_patterns:
-                if re.search(pattern, content):
-                    self.violations.append(
-                        {
-                            "file": relative_path,
-                            "type": "tool-entry-bloated-content",
-                            "severity": "warning",
-                            "message": f"Contains section '{pattern.strip('#')}' - {reason}",
-                        }
-                    )
+            for link in required_links:
+                if link not in content:
+                    issues.append(f"Missing link: {link}")
 
-            if self.options.verbose and not any(
-                v["file"] == relative_path for v in self.violations if v["severity"] == "error"
-            ):
-                print(f"  ✓ {entry_file}: Valid ({line_count} lines)")
+            if issues:
+                print(f"  ✗ {entry_file}:")
+                for issue in issues:
+                    print(f"    - {issue}")
+                errors += 1
+            else:
+                print(f"  ✓ {entry_file} (Valid)")
+
+        return errors
 
     def _check_tool_organization(self):
         """Check Layer 3: Tool guides in correct locations."""

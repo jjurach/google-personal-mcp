@@ -27,6 +27,54 @@ Agent Kernel documentation in docs/system-prompts/ has changed (new sections, up
 
 ---
 
+## Process Stability: Preventing Flip-Flopping
+
+**Critical for Scenario 2 (Updates):** When re-running bootstrap after system-prompts updates, follow these stability guidelines to prevent unnecessary changes that cause flip-flopping.
+
+### What NOT to Change
+
+**Cosmetic variations that should be left alone:**
+- Whitespace differences (extra blank lines, indentation variations)
+- Timestamp formatting ("Last Updated: YYYY-MM-DD" vs "Last Updated: Month Day, Year")
+- Comment placement or slight wording differences that preserve meaning
+- Cross-reference header phrasing (if links are correct and content is clear)
+- Minor formatting variations in lists, tables, or code blocks
+- Order of "See Also" links (if all links are valid)
+
+### What SHOULD Be Changed
+
+**Only modify when you find:**
+- **Broken links** - Links that 404 or point to moved/renamed files
+- **Missing files** - Referenced documentation that doesn't exist
+- **Factual errors** - Incorrect statements, outdated API references, wrong file paths
+- **Structural problems** - Missing sections, malformed navigation, duplicated content
+- **Maintenance burden** - Significant duplication between project docs and Agent Kernel
+
+### Stability Test: Will It Survive?
+
+Before making ANY change during Scenario 2 (Updates):
+
+1. **Ask:** Will this change survive the next `bootstrap.py --commit` run?
+2. **If NO:** Either modify `bootstrap.py` to preserve it, or skip the change
+3. **If UNSURE:** It's probably cosmetic - leave it alone
+
+**Example: Cross-reference headers**
+- ❌ **Bad:** Manually add cross-reference header to AGENTS.md (bootstrap.py will strip it)
+- ✅ **Good:** Modify bootstrap.py to auto-inject cross-references (now idempotent)
+
+### Philosophy: Idempotency Over Perfection
+
+**The goal of bootstrap is idempotency, not perfection.**
+
+- Running bootstrap twice should produce identical results
+- Small formatting variations are acceptable if they prevent churn
+- Agent Kernel and project docs may have different styles - that's OK
+- Focus on **broken functionality**, not **aesthetic consistency**
+
+**Rationale:** Flip-flopping wastes time and creates noisy commit history. A stable, slightly imperfect system is better than an unstable, perfect one.
+
+---
+
 ## Process Steps
 
 You will:
@@ -54,7 +102,7 @@ You will:
 **✅ THIS PROCESS MODIFIES:**
 - `AGENTS.md` - Project's main agent instructions
 - `README.md` - Project's main documentation
-- `[TOOL].md` - Tool-specific entry files (CLAUDE.md, AIDER.md, etc.)
+- `[TOOL].md` - Tool-specific entry files (`CLAUDE.md`, `.aider.md`, etc.)
 - `docs/*.md` - Project-specific documentation files
 - `dev_notes/` - Change logs and planning documents
 
@@ -95,7 +143,7 @@ find . -name "*.md" -type f ! -path "./venv/*" ! -path "./node_modules/*" | sort
 **Make note of:**
 - Does AGENTS.md already exist? (will be overwritten by bootstrap)
 - What files exist in docs/? (potential duplication targets)
-- Are there tool-specific entry files? (CLAUDE.md, AIDER.md, etc.)
+- Are there tool-specific entry files? (`CLAUDE.md`, `.aider.md`, etc.)
 - Is there a definition-of-done.md? (likely needs consolidation)
 
 ### Step 0.3: Check for Obvious Issues
@@ -221,7 +269,7 @@ wc -l /tmp/md_files.txt
 ```
 
 **Categorize files:**
-- **Root entry points:** AGENTS.md, README.md, CONTRIBUTING.md, CLAUDE.md, etc.
+- **Root entry points:** AGENTS.md, README.md, `CONTRIBUTING.md`, CLAUDE.md, etc.
 - **docs/ files:** Project documentation
 - **docs/system-prompts/:** Agent Kernel (don't modify these)
 - **dev_notes/:** Runtime documentation (ok as-is)
@@ -414,7 +462,7 @@ The project follows the Agent Kernel template system. For complete template docu
 Development notes and session transcripts are stored in `dev_notes/` using the format:
 
 \```
-dev_notes/subdir/YYYY-MM-DD_HH-MM-SS_description.md
+`dev_notes/subdir/YYYY-MM-DD_HH-MM-SS_description.md`
 \```
 
 ### Planning Documents
@@ -528,7 +576,7 @@ Last Updated: YYYY-MM-DD
 ```
 
 **Content sources:**
-- Existing docs/development.md, docs/overview.md
+- Existing docs/development.md, `docs/overview.md`
 - README.md (often has architecture section)
 - Source code comments
 - Project structure analysis
@@ -607,7 +655,7 @@ Last Updated: YYYY-MM-DD
 ```
 
 **Content sources:**
-- Existing docs/development.md, docs/mcp-development-guide.md, etc.
+- Existing docs/development.md, `docs/mcp-development-guide.md`, etc.
 - Extract common patterns from codebase
 - Test files (for testing patterns)
 
@@ -924,7 +972,7 @@ find docs -name "*.md" -type f ! -path "*/system-prompts/*" -exec wc -l {} \; | 
 - Is it tool-specific content that's already in system-prompts/tools/?
 
 **Common duplication targets:**
-- Tool-specific workflow files (e.g., docs/claude-code-workflows.md) - often duplicates system-prompts/tools/claude-code.md
+- Tool-specific workflow files (e.g., `docs/claude-code-workflows.md`) - often duplicates `system-prompts/tools/claude-code.md`
 - Generic development guides - may duplicate language-specific DoD
 - Generic testing guides - may duplicate language-specific DoD
 
@@ -960,16 +1008,21 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 **For Initial Bootstrap:** Establish all cross-references from scratch
 **For Updates:** Verify existing cross-references still work; update any broken ones due to system-prompts structure changes
 
-### Step 5.1: Add Cross-References to AGENTS.md
+### Step 5.1: Verify Cross-References in AGENTS.md
 
-**Find the Definition of Done section in AGENTS.md:**
+**Cross-references are automatically injected by bootstrap.py** as of 2026-01-29. You should verify they are present, but NOT manually add them.
+
+**Verify the Definition of Done section has cross-references:**
 
 ```bash
 # Find where DoD section starts
 grep -n "<!-- SECTION: PRINCIPLES -->" AGENTS.md
+
+# Check that cross-reference header exists
+grep -A 10 "<!-- SECTION: PRINCIPLES -->" AGENTS.md | grep -q "Agent Kernel" && echo "✓ Cross-references present" || echo "❌ Missing cross-references"
 ```
 
-**Add cross-reference header AFTER the section marker but BEFORE the content:**
+**Expected format (automatically injected by bootstrap.py):**
 
 ```markdown
 <!-- SECTION: PRINCIPLES -->
@@ -987,14 +1040,19 @@ This section is maintained by the Agent Kernel. For the complete, authoritative 
 [rest of Agent Kernel content]
 ```
 
+**If cross-references are missing:**
+- Re-run `python3 docs/system-prompts/bootstrap.py --commit` to regenerate with cross-references
+- DO NOT manually add them - they will be stripped on next bootstrap run
+
 **This establishes:**
 - Clear source attribution (Agent Kernel)
 - Link to authoritative versions
 - Link to project-specific extensions
+- **Idempotent process** - same input always produces same output
 
 ### Step 5.2: Enhance Tool Entry Files
 
-**If project has tool-specific entry files** (CLAUDE.md, AIDER.md, etc.):
+**If project has tool-specific entry files** (`CLAUDE.md`, `.aider.md`, etc.):
 
 **Add System Architecture section:**
 
@@ -1269,7 +1327,7 @@ python3 docs/system-prompts/docscan.py
 - "Back-reference to project file without conditional marking" - This is expected for project integration
 - "Plain-text file reference should use backticks" - Style issue, non-critical
 - "Entry file exceeds 20 lines" - Fine if file is well-organized
-- "File doesn't follow lowercase-kebab.md convention" - Entry files like AGENTS.md intentionally use UPPERCASE
+- "File doesn't follow `lowercase-kebab.md` convention" - Entry files like AGENTS.md intentionally use UPPERCASE
 
 **If errors found:**
 
@@ -1353,13 +1411,13 @@ ls -1 *.md | grep -v "^[A-Z]" && echo "❌ Root files should be UPPERCASE.md" ||
 find docs -maxdepth 1 -name "*.md" ! -name "*-*" ! -name "README.md" | while read f; do
   basename="$(basename "$f")"
   if [[ "$basename" =~ [A-Z] ]]; then
-    echo "⚠️  $f should use lowercase-kebab.md format"
+    echo "⚠️  $f should use `lowercase-kebab.md` format"
   fi
 done
 
 # Check dev_notes use timestamp format
 find dev_notes -name "*.md" ! -name "20*" 2>/dev/null | while read f; do
-  echo "⚠️  $f should use YYYY-MM-DD_HH-MM-SS_description.md format"
+  echo "⚠️  $f should use `YYYY-MM-DD_HH-MM-SS_description.md` format"
 done
 ```
 

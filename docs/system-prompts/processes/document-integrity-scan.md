@@ -69,7 +69,7 @@ Resolution:
 1. Identify all files in `docs/system-prompts/` and subdirectories
 2. For each file, extract all markdown links
 3. Categorize links:
-   - ✅ **Safe:** External URLs, anchors, other system-prompts files, entry points (AGENTS.md, CLAUDE.md, GEMINI.md, AIDER.md, CLINE.md)
+   - ✅ **Safe:** External URLs, anchors, other system-prompts files, entry points (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.aider.md`, `.clinerules`)
    - ⚠️ **Conditional:** Links outside system-prompts that are marked with "(if present)" or similar
    - ❌ **Problematic:** Links outside system-prompts without conditional marking
 4. Report problematic references
@@ -86,7 +86,7 @@ See [AGENTS.md](../AGENTS.md) for workflow details.
 ```markdown
 <!-- In docs/system-prompts/tools/aider.md -->
 For project-specific configuration, see [aider-config]
-(docs/tool-specific-guides/aider.md) *(if this file exists in your project)*.
+(`docs/tool-specific-guides/aider.md`) *(if this file exists in your project)*.
 ```
 - Target: Outside system-prompts
 - Marked: *(if this file exists in your project)*
@@ -206,7 +206,7 @@ README.md:
    - Verify exact names match
    - Verify they exist in expected locations (project root)
 3. For documentation files in docs/:
-   - Verify lowercase-kebab.md naming pattern
+   - Verify `lowercase-kebab.md` naming pattern
    - Allow exceptions for established patterns (like dev_notes/ with timestamp format)
 4. Report any violations
 
@@ -215,6 +215,65 @@ README.md:
 - ✅ `docs/file-naming-conventions.md` - Correct (lowercase-kebab)
 - ✅ `AGENTS.md` - Correct (auto-discovered entry point)
 - ❌ `docs/Tools-Capabilities.md` - Incorrect (should be lowercase-kebab)
+
+---
+
+### Layer 7: Alias Verification
+
+**Goal:** Ensure all shell aliases referenced in tips documents are defined in aliases.sh.
+
+**Process:**
+1. Scan all `.md` files in `docs/system-prompts/tips/` directory
+2. Extract alias references from markdown (looking for `alias name=` patterns in code blocks)
+3. Read `docs/system-prompts/tips/aliases.sh`
+4. Verify each referenced alias exists in aliases.sh
+5. Report any missing aliases
+
+**Alias pattern detection:**
+- Matches lines like: `alias claude-sys='claude --model sonnet'`
+- Matches lines like: `# Use claude-dev for development`
+- Matches inline references like: `` `claude-quick` ``
+- Extracts alias names: claude-sys, claude-dev, claude-quick, codex-sys, cline-list, etc.
+
+**Verification:**
+```
+tips/claude-code.md references:
+  → claude-sys ✅ (found in aliases.sh)
+  → claude-quick ✅ (found in aliases.sh)
+  → claude-dev ✅ (found in aliases.sh)
+  → claude-think ✅ (found in aliases.sh)
+
+tips/codex.md references:
+  → codex-sys ✅ (found in aliases.sh)
+  → codex-quick ✅ (found in aliases.sh)
+  → codex-dev ✅ (found in aliases.sh)
+  → codex-think ✅ (found in aliases.sh)
+
+tips/cline.md references:
+  → cline-list ✅ (found in aliases.sh)
+  → cline-resume ✅ (found in aliases.sh)
+  → cline-view ✅ (found in aliases.sh)
+  → cline-new ✅ (found in aliases.sh)
+  → cline-chat ✅ (found in aliases.sh)
+  → cline-sys ✅ (found in aliases.sh)
+  → cline-dev ✅ (found in aliases.sh)
+```
+
+**Failure Example:**
+```
+tips/claude-code.md references:
+  → claude-sys ✅ (found in aliases.sh)
+  → claude-experimental ❌ (NOT found in aliases.sh)
+
+Result: Alias verification failed
+Recommendation: Add missing alias to aliases.sh or remove reference from tips
+```
+
+**Rationale:**
+- Ensures aliases.sh is complete and up-to-date
+- Prevents documentation drift (docs mention aliases that don't exist)
+- Makes it easy for users to source all aliases at once
+- Provides single source of truth for alias definitions
 
 ---
 
@@ -236,7 +295,7 @@ must contain text indicating they are conditional:
   - "(if exists)"
   - Similar conditional language
 
-Exception: Links to entry points (AGENTS.md, CLAUDE.md, GEMINI.md, AIDER.md, CLINE.md)
+Exception: Links to entry points (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.aider.md`, `.clinerules`)
 are always safe (these files must exist in projects using AGENTS.md)
 ```
 
@@ -259,7 +318,7 @@ Never use plain text:
   ❌ check docs/file.md (no formatting)
 
 Exemptions:
-  Entry point files (AGENTS.md, CLAUDE.md, AIDER.md, CLINE.md, GEMINI.md)
+  Entry point files (`AGENTS.md`, `CLAUDE.md`, `.aider.md`, `.clinerules`, `GEMINI.md`)
   are exempt from reference-formatting checks.
 
   Rationale:
@@ -293,13 +352,13 @@ Project-specific guides:
 ### Rule 5: Naming Conventions
 ```
 Documentation files in docs/ directory:
-  Pattern: lowercase-kebab.md
+  Pattern: `lowercase-kebab.md`
   Exception: none currently
 
 Auto-discovered entry points:
   Pattern: {TOOL}.md (uppercase)
   Location: Project root
-  Examples: AGENTS.md, CLAUDE.md, AIDER.md, CLINE.md, GEMINI.md
+  Examples: `AGENTS.md`, `CLAUDE.md`, `.aider.md`, `.clinerules`, `GEMINI.md`
 
 Timestamped files (dev_notes/):
   Pattern: YYYY-MM-DD_HH-MM-SS_description.md
@@ -316,6 +375,29 @@ All tool guides must be referenced from:
 Missing references indicate:
   - New tool guide created but not linked
   - Guides need to be registered in project docs
+```
+
+### Rule 7: Alias Consistency
+
+```
+All shell aliases referenced in tips/ documents must be defined in aliases.sh.
+
+Verification process:
+  1. Scan all markdown files in docs/system-prompts/tips/
+  2. Extract alias references (alias definitions and usage examples)
+  3. Verify each alias exists in docs/system-prompts/tips/aliases.sh
+  4. Report missing aliases
+
+Patterns to detect:
+  - Alias definitions: alias claude-sys='command'
+  - Inline references: `claude-dev` in prose
+  - Usage examples: claude-quick 'task'
+
+Rationale:
+  - Single source of truth for alias definitions
+  - Prevents documentation drift
+  - Ensures users can source all aliases at once
+  - Makes aliases easy to discover and load
 ```
 
 ---

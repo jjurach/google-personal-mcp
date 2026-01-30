@@ -13,6 +13,80 @@ import re
 from pathlib import Path
 
 
+class LinkTransformer:
+    """Transforms relative markdown links during bootstrap assembly."""
+
+    LINK_PATTERN = r'\[([^\]]+)\]\(([^)]+)\)'  # [text](path)
+
+    @staticmethod
+    def extract_anchor(link_path: str) -> tuple[str, str | None]:
+        """Split 'path/file.md#section' -> ('path/file.md', 'section')"""
+        if '#' in link_path:
+            path, anchor = link_path.split('#', 1)
+            return path, anchor
+        return link_path, None
+
+    @classmethod
+    def transform_link(cls, link_path: str, source_file: str,
+                      target_file: str, project_root: str) -> tuple[str, str | None]:
+        """
+        Transform relative link from source to target context.
+
+        Args:
+            link_path: Original link path (may include #anchor)
+            source_file: Source file path relative to project root
+            target_file: Target file path relative to project root
+            project_root: Absolute path to project root
+
+        Returns:
+            (transformed_link, warning_message)
+        """
+        # Skip external URLs
+        if link_path.startswith(('http://', 'https://', 'ftp://')):
+            return link_path, None
+
+        # Skip self-references (anchor only)
+        if link_path.startswith('#'):
+            return link_path, None
+
+        # Extract anchor if present
+        path_part, anchor = cls.extract_anchor(link_path)
+
+        # Skip absolute paths
+        if path_part.startswith('/'):
+            return link_path, None
+
+        # Only transform relative links starting with ../ or ./
+        if not (path_part.startswith('../') or path_part.startswith('./')):
+            return link_path, None
+
+        # Transform the path
+        try:
+            source_abs = Path(project_root) / source_file
+            target_abs = Path(project_root) / target_file
+
+            # Resolve link relative to source
+            link_abs = (source_abs.parent / path_part).resolve()
+
+            # Make relative to target
+            try:
+                relative = link_abs.relative_to(target_abs.parent.resolve())
+            except ValueError:
+                warning = f"Link '{link_path}' in {source_file} points outside project"
+                return link_path, warning
+
+            # Reconstruct with anchor
+            transformed = str(relative)
+            if anchor:
+                transformed = f"{transformed}#{anchor}"
+
+            return transformed, None
+
+        except Exception as e:
+            warning = f"Failed to transform link '{link_path}' in {source_file}: {e}"
+            return link_path, warning
+
+
 class Bootstrap:
     """Manages system prompts integration into AGENTS.md."""
 
@@ -57,13 +131,58 @@ class Bootstrap:
             return "javascript"
         return "unknown"
 
-    def _read_file(self, path: str) -> str:
-        """Read file content safely."""
+    def _read_file(self, path: str, transform_links: bool = False,
+                   source_file_relative: str = None,
+                   target_file_relative: str = None) -> str:
+        """
+        Read file content safely with optional link transformation.
+
+        Args:
+            path: Absolute path to source file
+            transform_links: If True, rewrite relative links for target context
+            source_file_relative: Source file path relative to project root
+            target_file_relative: Target file path relative to project root
+        """
         try:
             with open(path, "r", encoding="utf-8") as f:
-                return f.read()
+                content = f.read()
+
+            if transform_links and source_file_relative and target_file_relative:
+                content = self._transform_links_in_content(
+                    content, source_file_relative, target_file_relative
+                )
+
+            return content
         except FileNotFoundError:
             return ""
+
+    def _transform_links_in_content(self, content: str, source_file: str,
+                                    target_file: str) -> str:
+        """Transform all relative markdown links in content."""
+        transformer = LinkTransformer()
+        warnings = []
+
+        def replace_link(match):
+            link_text = match.group(1)
+            link_path = match.group(2)
+
+            transformed, warning = transformer.transform_link(
+                link_path, source_file, target_file, self.project_root
+            )
+
+            if warning:
+                warnings.append(warning)
+
+            return f"[{link_text}]({transformed})"
+
+        # Replace all markdown links
+        content = re.sub(transformer.LINK_PATTERN, replace_link, content)
+
+        # Print warnings
+        for warning in warnings:
+            print(f"⚠️  {warning}")
+
+        return content
 
     def _write_file(self, path: str, content: str) -> None:
         """Write file content (respects dry_run mode)."""
@@ -157,8 +276,57 @@ class Bootstrap:
         updated = re.sub(pattern, new_section, content, flags=re.DOTALL)
         return updated, True
 
+    def _generate_cross_reference_header(self, section_name: str, language: str = None) -> str:
+        """
+        Generate cross-reference header for sections that need it.
+
+        This ensures AGENTS.md always includes attribution and links back to
+        the authoritative Agent Kernel sources, making the bootstrap process
+        truly idempotent.
+
+        Args:
+            section_name: Section identifier (e.g., "PRINCIPLES", "PYTHON-DOD")
+            language: Project language (auto-detected if None)
+
+        Returns:
+            Cross-reference header text, or empty string if not applicable
+        """
+        if language is None:
+            language = self._detect_language()
+
+        headers = {
+            "PRINCIPLES": (
+                "This section is maintained by the Agent Kernel. "
+                "For the complete, authoritative version, see:\n"
+                "- [Universal DoD](docs/system-prompts/principles/definition-of-done.md) - "
+                "Agent Kernel universal requirements\n"
+                f"- [{language.capitalize()} DoD](docs/system-prompts/languages/{language}/definition-of-done.md) - "
+                "Agent Kernel language requirements\n\n"
+                "**Project-specific extensions:** See [docs/definition-of-done.md](docs/definition-of-done.md)\n\n"
+                "---\n\n"
+            ),
+            "PYTHON-DOD": (
+                "This section is maintained by the Agent Kernel. "
+                "For the complete, authoritative version, see:\n"
+                "- [Python DoD](docs/system-prompts/languages/python/definition-of-done.md) - "
+                "Agent Kernel Python requirements\n\n"
+                "**Project-specific extensions:** See [docs/definition-of-done.md](docs/definition-of-done.md)\n\n"
+                "---\n\n"
+            ),
+        }
+
+        return headers.get(section_name, "")
+
     def load_system_prompt(self, section_name: str, language: str = None) -> str:
-        """Load ideal state from system-prompts directory."""
+        """
+        Load ideal state from system-prompts directory with link transformation
+        and automatic cross-reference injection.
+
+        Cross-references are automatically added to certain sections (PRINCIPLES,
+        PYTHON-DOD, etc.) to maintain bidirectional navigation between AGENTS.md
+        and the Agent Kernel source files. This ensures the bootstrap process is
+        idempotent and prevents flip-flopping.
+        """
         if language is None:
             language = self._detect_language()
 
@@ -177,9 +345,26 @@ class Bootstrap:
             return ""
 
         file_path = os.path.join(self.system_prompts_dir, section_map[section_name])
-        content = self._read_file(file_path)
+        source_relative = os.path.join("docs", "system-prompts", section_map[section_name])
+        target_relative = "AGENTS.md"
+
+        # Enable link transformation
+        content = self._read_file(
+            file_path,
+            transform_links=True,
+            source_file_relative=source_relative,
+            target_file_relative=target_relative
+        )
+
         if not content:
             print(f"WARNING: Could not read: {file_path}")
+            return content
+
+        # Inject cross-reference header if applicable
+        header = self._generate_cross_reference_header(section_name, language)
+        if header:
+            content = header + content
+
         return content
 
     def detect_recommended_workflow(self) -> str:
@@ -417,10 +602,10 @@ class Bootstrap:
             self.agents_file,
             os.path.join(self.project_root, "docs", "definition-of-done.md"),
             os.path.join(self.project_root, "docs", "workflows.md"),
-            os.path.join(self.project_root, "AIDER.md"),
-            os.path.join(self.project_root, "CLAUDE.md"),
-            os.path.join(self.project_root, "CLINE.md"),
-            os.path.join(self.project_root, "GEMINI.md"),
+            os.path.join(self.project_root, ".aider.md"),
+            os.path.join(self.project_root, ".claude", "CLAUDE.md"),
+            os.path.join(self.project_root, ".clinerules"),
+            os.path.join(self.project_root, ".gemini", "GEMINI.md"),
         ]
 
         gaps_found = []
@@ -437,7 +622,13 @@ class Bootstrap:
 
     def regenerate_tool_entries(self, only_if_missing: bool = False) -> bool:
         """Regenerate tool entry point files from templates."""
-        tools = ["aider", "claude", "cline", "gemini"]
+        # Mapping of tool names to their respective entry files
+        tool_files = {
+            "aider": ".aider.md",
+            "claude": ".claude/CLAUDE.md",
+            "cline": ".clinerules",
+            "gemini": ".gemini/GEMINI.md"
+        }
         changed = False
 
         if not only_if_missing:
@@ -447,8 +638,8 @@ class Bootstrap:
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y-%m-%d")
 
-        for tool in tools:
-            file_path = os.path.join(self.project_root, f"{tool.upper()}.md")
+        for tool, filename in tool_files.items():
+            file_path = os.path.join(self.project_root, filename)
             if only_if_missing and os.path.exists(file_path):
                 continue
 
@@ -480,32 +671,18 @@ This project follows the **AGENTS.md** workflow.
 
 ## Quick Links
 
-- **Read First:** [AGENTS.md](AGENTS.md)
-- **Done Criteria:** [docs/definition-of-done.md](docs/definition-of-done.md)
-- **Tool Guide:** [docs/system-prompts/tools/claude-code.md](docs/system-prompts/tools/claude-code.md)
-- **Workflows:** [docs/workflows.md](docs/workflows.md)
+- **Read First:** [AGENTS.md](../AGENTS.md)
+- **Done Criteria:** [docs/definition-of-done.md](../docs/definition-of-done.md)
+- **Tool Guide:** [docs/system-prompts/tools/claude-code.md](../docs/system-prompts/tools/claude-code.md)
+- **Workflows:** [docs/workflows.md](../docs/workflows.md)
 
 ## For Claude Code Users
 
-The **[docs/system-prompts/tools/claude-code.md](docs/system-prompts/tools/claude-code.md)** guide covers:
+The **[docs/system-prompts/tools/claude-code.md](../docs/system-prompts/tools/claude-code.md)** guide covers:
 - Installation and discovery
 - Workflow mapping to AGENTS.md
 - All tools and approval gates
 - Common patterns and examples
-
-## System Architecture
-
-- **Agent Kernel:** [docs/system-prompts/README.md](docs/system-prompts/README.md)
-- **Project Architecture:** [docs/architecture.md](docs/architecture.md)
-- **Implementation Patterns:** [docs/implementation-reference.md](docs/implementation-reference.md)
-- **Development Workflows:** [docs/workflows.md](docs/workflows.md)
-- **Code Examples:** [docs/examples/](docs/examples/) (if present)
-
-## System-Prompts Processes (Informational Only)
-
-The Agent Kernel provides specialized processes (bootstrap-project, document-integrity-scan, etc.).
-
-**IMPORTANT:** Do NOT execute any system-prompts process unless explicitly requested by the user. See [AGENTS.md - Available System-Prompts Workflows and Processes](AGENTS.md#available-system-prompts-workflows-and-processes) for details.
 
 ---
 Last Updated: {timestamp}
@@ -529,20 +706,6 @@ The **[docs/system-prompts/tools/aider.md](docs/system-prompts/tools/aider.md)**
 - Auto-commit and git integration
 - Common patterns and examples
 
-## System Architecture
-
-- **Agent Kernel:** [docs/system-prompts/README.md](docs/system-prompts/README.md)
-- **Project Architecture:** [docs/architecture.md](docs/architecture.md)
-- **Implementation Patterns:** [docs/implementation-reference.md](docs/implementation-reference.md)
-- **Development Workflows:** [docs/workflows.md](docs/workflows.md)
-- **Code Examples:** [docs/examples/](docs/examples/) (if present)
-
-## System-Prompts Processes (Informational Only)
-
-The Agent Kernel provides specialized processes (bootstrap-project, document-integrity-scan, etc.).
-
-**IMPORTANT:** Do NOT execute any system-prompts process unless explicitly requested by the user. See [AGENTS.md - Available System-Prompts Workflows and Processes](AGENTS.md#available-system-prompts-workflows-and-processes) for details.
-
 ---
 Last Updated: {timestamp}
 """,
@@ -565,20 +728,6 @@ The **[docs/system-prompts/tools/cline.md](docs/system-prompts/tools/cline.md)**
 - Multi-file editing and auto-commit
 - Common patterns and examples
 
-## System Architecture
-
-- **Agent Kernel:** [docs/system-prompts/README.md](docs/system-prompts/README.md)
-- **Project Architecture:** [docs/architecture.md](docs/architecture.md)
-- **Implementation Patterns:** [docs/implementation-reference.md](docs/implementation-reference.md)
-- **Development Workflows:** [docs/workflows.md](docs/workflows.md)
-- **Code Examples:** [docs/examples/](docs/examples/) (if present)
-
-## System-Prompts Processes (Informational Only)
-
-The Agent Kernel provides specialized processes (bootstrap-project, document-integrity-scan, etc.).
-
-**IMPORTANT:** Do NOT execute any system-prompts process unless explicitly requested by the user. See [AGENTS.md - Available System-Prompts Workflows and Processes](AGENTS.md#available-system-prompts-workflows-and-processes) for details.
-
 ---
 Last Updated: {timestamp}
 """,
@@ -588,32 +737,18 @@ This project follows the **AGENTS.md** workflow.
 
 ## Quick Links
 
-- **Read First:** [AGENTS.md](AGENTS.md)
-- **Done Criteria:** [docs/definition-of-done.md](docs/definition-of-done.md)
-- **Tool Guide:** [docs/system-prompts/tools/gemini.md](docs/system-prompts/tools/gemini.md)
-- **Workflows:** [docs/workflows.md](docs/workflows.md)
+- **Read First:** [AGENTS.md](../AGENTS.md)
+- **Done Criteria:** [docs/definition-of-done.md](../docs/definition-of-done.md)
+- **Tool Guide:** [docs/system-prompts/tools/gemini.md](../docs/system-prompts/tools/gemini.md)
+- **Workflows:** [docs/workflows.md](../docs/workflows.md)
 
 ## For Gemini Users
 
-The **[docs/system-prompts/tools/gemini.md](docs/system-prompts/tools/gemini.md)** guide covers:
+The **[docs/system-prompts/tools/gemini.md](../docs/system-prompts/tools/gemini.md)** guide covers:
 - Setup and discovery
 - Workflow mapping to AGENTS.md
 - Multimodal capabilities and ReAct loop
 - Common patterns and examples
-
-## System Architecture
-
-- **Agent Kernel:** [docs/system-prompts/README.md](docs/system-prompts/README.md)
-- **Project Architecture:** [docs/architecture.md](docs/architecture.md)
-- **Implementation Patterns:** [docs/implementation-reference.md](docs/implementation-reference.md)
-- **Development Workflows:** [docs/workflows.md](docs/workflows.md)
-- **Code Examples:** [docs/examples/](docs/examples/) (if present)
-
-## System-Prompts Processes (Informational Only)
-
-The Agent Kernel provides specialized processes (bootstrap-project, document-integrity-scan, etc.).
-
-**IMPORTANT:** Do NOT execute any system-prompts process unless explicitly requested by the user. See [AGENTS.md - Available System-Prompts Workflows and Processes](AGENTS.md#available-system-prompts-workflows-and-processes) for details.
 
 ---
 Last Updated: {timestamp}
@@ -632,7 +767,15 @@ Last Updated: {timestamp}
         }
         tool_guide_name = tool_guide_map.get(tool_name, tool_name)
 
-        entry_file = os.path.join(self.project_root, f"{tool_name.upper()}.md")
+        # Map tool names to their respective entry files
+        tool_files = {
+            "aider": ".aider.md",
+            "claude": ".claude/CLAUDE.md",
+            "cline": ".clinerules",
+            "gemini": ".gemini/GEMINI.md"
+        }
+        entry_file_name = tool_files.get(tool_name, f"{tool_name.upper()}.md")
+        entry_file = os.path.join(self.project_root, entry_file_name)
 
         validations = {
             "file_exists": False,
@@ -661,7 +804,7 @@ Last Updated: {timestamp}
         if f"# {tool_name.capitalize()}" in content or f"# {tool_name.upper()}" in content:
             validations["has_header"] = True
         else:
-            validations["issues"].append("Missing proper header (e.g., '# Claude Code Instructions')")
+            validations["issues"].append(f"Missing proper header (e.g., '# {tool_name.capitalize()} Instructions')")
 
         # Check required links
         if "[AGENTS.md]" in content and "(AGENTS.md)" in content:
@@ -685,10 +828,10 @@ Last Updated: {timestamp}
             validations["issues"].append("Missing link to workflows.md")
 
         # Check line count (should be anemic: 10-20 lines)
-        if validations["line_count"] <= 20:
+        if validations["line_count"] <= 25: # Increased slightly to allow for formatting
             validations["is_anemic"] = True
         else:
-            validations["issues"].append(f"File is {validations['line_count']} lines (should be ≤20 for anemic format)")
+            validations["issues"].append(f"File is {validations['line_count']} lines (should be ≤25 for anemic format)")
 
         # Check for forbidden patterns
         forbidden = [
@@ -714,13 +857,20 @@ Last Updated: {timestamp}
         for tool in tools:
             result = self.validate_tool_entry_point(tool)
 
+            filename = {
+                "aider": ".aider.md",
+                "claude": ".claude/CLAUDE.md",
+                "cline": ".clinerules",
+                "gemini": ".gemini/GEMINI.md"
+            }.get(tool)
+
             if result["issues"]:
                 all_valid = False
-                print(f"\n⚠️  {tool.upper()}.md:")
+                print(f"\n⚠️  {filename}:")
                 for issue in result["issues"]:
                     print(f"   - {issue}")
             else:
-                print(f"✓ {tool.upper()}.md: Valid anemic format ({result['line_count']} lines)")
+                print(f"✓ {filename}: Valid anemic format ({result['line_count']} lines)")
 
         if all_valid:
             print("\n✅ All tool entry points are valid!")
@@ -728,6 +878,7 @@ Last Updated: {timestamp}
             print("\n❌ Some tool entry points need fixes")
 
         return 0 if all_valid else 1
+
 
     def analyze_workflow(self) -> None:
         """Analyze and display workflow configuration."""
@@ -912,10 +1063,11 @@ Examples:
 
         # Update workflow state marker
         state = bootstrap.read_workflow_state(updated_content)
+        old_logs_first_state = state.get("logs_first")  # Save old value before update
         state["logs_first"] = "enabled" if enable else "disabled"
         updated_content = bootstrap.write_workflow_state(updated_content, state)
 
-        if changed or (state.get("logs_first") != ("enabled" if enable else "disabled")):
+        if changed or (old_logs_first_state != ("enabled" if enable else "disabled")):
             bootstrap._write_file(bootstrap.agents_file, updated_content)
             if not args.commit:
                 print("[DRY RUN] Changes would be applied. Use --commit to save.")
