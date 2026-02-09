@@ -48,6 +48,27 @@ See [docs/system-prompts/README.md - Available Workflows and Processes](docs/sys
 
 ---
 
+<!-- SECTION: PROJECT-SPECIFIC -->
+## Project-Specific Rules: Polecat Tactical Execution
+
+### 1. Your Role: Tactical Executor
+- **Source of Truth:** The Bead description (provided by Mayor) and `docs/specs/` (in Town Root).
+- **Mandate:** Execute the assigned Bead.
+- **Workflow:**
+    1.  Read the Bead (`bd show <id>`).
+    2.  Create a tactical plan in `dev_notes/project_plans/` (following the Logs-First workflow).
+    3.  Execute and verify.
+
+### 2. File Organization
+- **Architectural Specs:** `docs/specs/` (Mayor managed, authoritative).
+- **Execution Plans:** `dev_notes/` (Polecat managed, ephemeral/tactical).
+
+### 3. Documentation Access
+- **System Prompts:** `docs/system-prompts/` (Local Copy)
+- **Project Specs:** `${GT_TOWN_ROOT}/docs/specs/`
+<!-- END-SECTION -->
+
+
 <!-- SECTION: CORE-WORKFLOW -->
 # Agent Kernel: Core Workflow & Unbreakable Rules
 
@@ -59,11 +80,12 @@ See [docs/system-prompts/README.md - Available Workflows and Processes](docs/sys
 1.  **Is it a simple question?** → Answer it directly.
 2.  **Is it a Trivial Change?** → Make the change directly. No documentation required.
 3.  **Is it just to fix tests or to fix broken usage?** → Make the change directly. No documentation required.
-4.  **Is it a Research/Documentation Change?** → Make the change directly. No extra documentation required.
+4.  **Is it a Research/Documentation Change?** → Make the change directly. No project plan required, but for non-trivial documentation work, create a timestamped change log in `dev_notes/changes/` marked with `Status: ad-hoc`.
 5.  **Is it anything else?** → Announce you will create a **Project Plan**.
 
 > **Trivial Change Definition:** Non-functional changes like fixing typos in comments or code formatting.
 > **Research/Documentation Change:** Requests which culminate ONLY into writes to markdown documents in the root folder or in docs/ or in `dev_notes`.
+> **Non-Trivial Documentation:** Creating new documentation files, substantial rewrites, or establishing new patterns/conventions. These skip project plans but still require change documentation for the audit trail.
 
 **Step B: Process Spec File (If Required)**
 - When a prompt involves planning, represent the planning in `dev_notes/specs`
@@ -101,15 +123,15 @@ See [docs/system-prompts/README.md - Available Workflows and Processes](docs/sys
 <!-- END-SECTION -->
 
 <!-- SECTION: PRINCIPLES -->
-# Definition of Done: Universal Principles
-
 This section is maintained by the Agent Kernel. For the complete, authoritative version, see:
 - [Universal DoD](docs/system-prompts/principles/definition-of-done.md) - Agent Kernel universal requirements
-- [Python DoD](docs/system-prompts/languages/python/definition-of-done.md) - Agent Kernel Python requirements
+- [Python DoD](docs/system-prompts/languages/python/definition-of-done.md) - Agent Kernel language requirements
 
 **Project-specific extensions:** See [docs/definition-of-done.md](docs/definition-of-done.md)
 
 ---
+
+# Definition of Done: Universal Principles
 
 **MANDATORY:** No task is considered "Done" until all applicable criteria in this document are met. This document serves as the **State Transition Logic** for the project's development workflow.
 
@@ -179,6 +201,13 @@ See `docs/system-prompts/languages/python/definition-of-done.md` for Python-spec
 <!-- END-SECTION -->
 
 <!-- SECTION: PYTHON-DOD -->
+This section is maintained by the Agent Kernel. For the complete, authoritative version, see:
+- [Python DoD](docs/system-prompts/languages/python/definition-of-done.md) - Agent Kernel Python requirements
+
+**Project-specific extensions:** See [docs/definition-of-done.md](docs/definition-of-done.md)
+
+---
+
 # Definition of Done: Python Specifics
 
 This document extends the universal Definition of Done (see `docs/system-prompts/principles/definition-of-done.md`) with Python-specific criteria and tools.
@@ -414,7 +443,7 @@ These files define:
 ## The Mandatory Reading List
 
 ### 1. Core Workflow
-**File:** [docs/system-prompts/workflows/logs-first.md](docs/system-prompts/workflows/logs-first.md)
+**File:** [docs/system-prompts/workflows/logs-first.md](workflows/logs-first.md)
 
 **What it contains:**
 - 5-step workflow (Analyze Request → Create Spec → Create Plan → Get Approval → Implement & Document)
@@ -463,7 +492,7 @@ These files provide additional context when working on specific features:
 - **Architecture:** [docs/architecture.md](docs/architecture.md) - System design, components, and data flow
 - **Implementation Reference:** [docs/implementation-reference.md](docs/implementation-reference.md) - Code patterns, style, and conventions
 - **Workflows:** [docs/workflows.md](docs/workflows.md) - Development processes and available workflow options
-- **Tool Guides:** [docs/system-prompts/tools/](docs/system-prompts/tools/) - Guides for Aider, Claude Code, and other tools
+- **Tool Guides:** [docs/system-prompts/tools/](tools/) - Guides for Aider, Claude Code, and other tools
 
 ---
 
